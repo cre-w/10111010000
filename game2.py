@@ -1,4 +1,25 @@
 import pygame
+import os
+import sys
+
+pygame.init()
+
+
+def load_image(name):
+    fullname = os.path.join('data', name)
+    if not os.path.isfile(fullname):
+        print(f"Файл с изображением '{fullname}' не найден")
+        sys.exit()
+    image = pygame.image.load(fullname)
+    return image
+
+
+explosion_frames = [load_image("explosion_frame_1.png"),
+                    load_image("explosion_frame_2.png"),
+                    load_image("explosion_frame_3.png"),
+                    load_image("explosion_frame_4.png"),
+                    load_image("explosion_frame_5.png"),
+                    load_image("explosion_frame_6.png")]
 
 
 class Board:
@@ -17,7 +38,7 @@ class Board:
         self.explode_board = [[0] * width for _ in range(height)]
         self.left = 10
         self.top = 10
-        self.cell_size = 30
+        self.cell_size = 50
         self.x = 0
         self.y = 0
         self.player = self.board[self.x][self.y] = 1
@@ -25,46 +46,42 @@ class Board:
         self.bomb_timer_fps = 0
         self.bomb_x = 0
         self.bomb_y = 0
-        self.bomb_range = 1
+        self.bomb_range = 2
         self.bomb_ranges = self.bomb_range
         self.bomb_timer_length = 2
         self.side_ranges = []
         self.can_place_bombs = True
+        self.explosion_frame_counter = 0
+        self.explosions = 0
+        self.explosion_counter = 0
 
     def set_view(self, left, top, cell_size):
         self.left = left
         self.top = top
         self.cell_size = cell_size
 
+    def explosion_render(self):
+        return explosion_frames[self.explosion_frame_counter]
+
     def render(self, screen):
         font = pygame.font.Font(None, 50)
         text = font.render(str(self.score), True, (100, 255, 100))
-        screen.blit(text, (500, 0))
+        screen.blit(text, (520, 0))
         for i in range(self.height):
             for j in range(self.width):
                 if self.explode_board[i][j] == 1:
-                    pygame.draw.rect(screen, "blue", (
-                        self.left + (j * self.cell_size) + 5, self.top + (i * self.cell_size) + 5,
-                        self.cell_size - 10,
-                        self.cell_size - 10))
-                elif self.bomb_board[i][j] == 1:
-                    pygame.draw.rect(screen, "green", (
-                        self.left + (j * self.cell_size) + 5, self.top + (i * self.cell_size) + 5,
-                        self.cell_size - 10,
-                        self.cell_size - 10))
+                    image = self.explosion_render()
+                    screen.blit(image, (self.left + (j * self.cell_size) - 12, self.top + (i * self.cell_size) - 7))
                     pygame.draw.rect(screen, "white", (
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
                         self.cell_size),
                                      width=1)
-                if self.board[i][j] == 1:
-                    pygame.draw.circle(screen, "red", ((self.left + (j * self.cell_size)) + self.cell_size / 2,
-                                                       (self.top + (i * self.cell_size)) + self.cell_size / 2),
-                                       self.cell_size / 2 - 2,
-                                       width=2)
-                    pygame.draw.rect(screen, "white", (
-                        self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
-                        self.cell_size),
-                                     width=1)
+                    self.explosion_counter += 1
+                    if self.explosion_counter > self.explosions * 3:
+                        self.explosion_frame_counter += 1
+                        self.explosion_counter = 0
+                        if self.explosion_frame_counter > 5:
+                            self.explosion_frame_counter = 0
                 elif self.board[i][j] == 2:
                     pygame.draw.rect(screen, "brown", (
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
@@ -81,13 +98,13 @@ class Board:
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
                         self.cell_size),
                                      width=1)
-                elif self.board[i][j] == 0:
+                else:
                     pygame.draw.rect(screen, "white", (
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
                         self.cell_size),
                                      width=1)
 
-    def down(self):
+    def move_down(self):
         if self.y + 1 < self.height and self.board[self.y + 1][self.x] not in [2, 3] and self.bomb_board[self.y + 1][
             self.x] != 1:
             self.board[self.y][self.x] = 0
@@ -96,35 +113,41 @@ class Board:
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
-    def up(self):
-        if self.y - 1 >= 0 and self.board[self.y - 1][self.x] not in [2, 3] and self.bomb_board[self.y - 1][self.x] != 1:
+    def move_up(self):
+        if self.y - 1 >= 0 and self.board[self.y - 1][self.x] not in [2, 3] and self.bomb_board[self.y - 1][
+            self.x] != 1:
             self.board[self.y][self.x] = 0
             self.y -= 1
             self.board[self.y][self.x] = self.player
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
-    def left1(self):
-        if self.x - 1 >= 0 and self.board[self.y][self.x - 1] not in [2, 3] and self.bomb_board[self.y][self.x - 1] != 1:
+    def move_left(self):
+        if self.x - 1 >= 0 and self.board[self.y][self.x - 1] not in [2, 3] and self.bomb_board[self.y][
+            self.x - 1] != 1:
             self.board[self.y][self.x] = 0
             self.x -= 1
             self.board[self.y][self.x] = self.player
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
-    def right(self):
-        if self.x + 1 < self.width and self.board[self.y][self.x + 1] not in [2, 3] and self.bomb_board[self.y][self.x + 1] != 1:
+    def move_right(self):
+        if self.x + 1 < self.width and self.board[self.y][self.x + 1] not in [2, 3] and self.bomb_board[self.y][
+            self.x + 1] != 1:
             self.board[self.y][self.x] = 0
             self.x += 1
             self.board[self.y][self.x] = self.player
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
-    def bomb1(self):
+    def bomb_placement(self):
         if self.can_place_bombs:
+            self.explosions = 0
             self.bomb_board[self.y][self.x] = 1
             self.bomb_x = self.x
             self.bomb_y = self.y
+            bomb.rect.x = self.bomb_x * self.cell_size + self.left + 5
+            bomb.rect.y = self.bomb_y * self.cell_size + self.top + 5
             self.bomb_timer_fps = 0
             self.bomb_placed = True
             self.can_place_bombs = False
@@ -143,12 +166,14 @@ class Board:
         elif side == 3:
             y = 0
             x = step
-        if self.board[self.bomb_y + y][self.bomb_x + x] == self.player or self.board[self.bomb_y][self.bomb_x] == self.player:
+        if self.board[self.bomb_y + y][self.bomb_x + x] == self.player or self.board[self.bomb_y][
+            self.bomb_x] == self.player:
             exit()
         if self.board[self.bomb_y + y][self.bomb_x + x] == 3:
             self.score += 100
         self.board[self.bomb_y + y][self.bomb_x + x] = 0
         self.explode_board[self.bomb_y + y][self.bomb_x + x] = 1
+        self.explosions += 1
 
     def explode_clear(self):
         self.explode_board = [[0] * width for _ in range(height)]
@@ -184,36 +209,67 @@ class Board:
         self.explode()
 
 
+class Bomb(pygame.sprite.Sprite):
+    image = load_image("bomb_3.png")
+
+    def __init__(self, *group):
+        super().__init__(*group)
+        self.image = Bomb.image
+        self.rect = self.image.get_rect()
+
+
+class Player(pygame.sprite.Sprite):
+    image = load_image("bomb_2.png")
+
+    def __init__(self, *group):
+        super().__init__(*group)
+        self.image = Player.image
+        self.rect = self.image.get_rect()
+
+    def update(self):
+        self.image = Bomb.image
+        self.rect.x = board.x * board.cell_size + board.left + 5
+        self.rect.y = board.y * board.cell_size + board.top + 5
+
+
 if __name__ == '__main__':
-    pygame.init()
-    pygame.display.set_caption('Чёрное в белое и наоборот')
-    size = width, height = 600, 600
+    pygame.display.set_caption('bomber')
+    size = width, height = 600, 400
     screen = pygame.display.set_mode(size)
     screen.fill('black')
-    board = Board(5, 7)
+    board = Board(10, 7)
     running = True
     clock = pygame.time.Clock()
     fps = 60
+    bomb_group = pygame.sprite.Group()
+    bomb = Bomb()
+    bomb_group.add(bomb)
+    player_group = pygame.sprite.Group()
+    player = Player()
+    player_group.add(player)
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    board.bomb1()
+                    board.bomb_placement()
                 if event.key == pygame.K_DOWN:
-                    board.down()
+                    board.move_down()
                 if event.key == pygame.K_UP:
-                    board.up()
+                    board.move_up()
                 if event.key == pygame.K_LEFT:
-                    board.left1()
+                    board.move_left()
                 if event.key == pygame.K_RIGHT:
-                    board.right()
+                    board.move_right()
         screen.fill((0, 0, 0))
+        player_group.update()
+        player_group.draw(screen)
         board.render(screen)
         clock.tick(fps)
         if board.bomb_placed:
             board.bomb_timer_fps += 1
+            bomb_group.draw(screen)
             if board.bomb_timer_fps == fps * board.bomb_timer_length:
                 board.explode_check()
                 board.bomb_placed = False
