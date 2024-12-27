@@ -11,7 +11,7 @@ class Board:
         self.board[1][0] = 2
         self.board[5][0] = 2
         self.board[5][4] = 2
-        self.board[6][4] = 2
+        self.board[6][4] = 3
         self.bomb_board = [[0] * width for _ in range(height)]
         self.explode_board = [[0] * width for _ in range(height)]
         self.left = 10
@@ -63,6 +63,14 @@ class Board:
                                      width=1)
                 elif self.board[i][j] == 2:
                     pygame.draw.rect(screen, "brown", (
+                        self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
+                        self.cell_size))
+                    pygame.draw.rect(screen, "white", (
+                        self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
+                        self.cell_size),
+                                     width=1)
+                elif self.board[i][j] == 3:
+                    pygame.draw.rect(screen, "yellow", (
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
                         self.cell_size))
                     pygame.draw.rect(screen, "white", (
@@ -132,8 +140,11 @@ class Board:
             y = 0
             x = step
         if self.board[self.bomb_y + y][self.bomb_x + x] == self.player or self.board[self.bomb_y][self.bomb_x] == self.player:
-            print("гойда")
-        self.board[self.bomb_y + y][self.bomb_x + x] = 0
+            exit()
+        if self.board[self.bomb_y + y][self.bomb_x + x] == 3:
+            exit()
+        else:
+            self.board[self.bomb_y + y][self.bomb_x + x] = 0
         self.explode_board[self.bomb_y + y][self.bomb_x + x] = 1
 
     def explode_clear(self):
