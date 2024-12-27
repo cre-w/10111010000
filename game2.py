@@ -117,6 +117,23 @@ class Board:
             self.bomb_placed = True
             self.can_place_bombs = False
 
+    def actual_explosion(self, side, br):
+        step = br + 1
+        if side == 0:
+            y = -step
+            x = 0
+        elif side == 1:
+            y = 0
+            x = -step
+        elif side == 2:
+            y = step
+            x = 0
+        elif side == 3:
+            y = 0
+            x = step
+        self.board[self.bomb_y + y][self.bomb_x + x] = 0
+        self.explode_board[self.bomb_y + y][self.bomb_x + x] = 1
+
     def explode(self):
         all_sides_list = list(reversed(self.side_ranges))
         for bomb_range, sides_list in enumerate(all_sides_list):
@@ -125,18 +142,7 @@ class Board:
             for i, side in enumerate(sides_list):
                 if not side:
                     continue
-                if i == 0:
-                    self.board[self.bomb_y - (bomb_range + 1)][self.bomb_x] = 0
-                    self.explode_board[self.bomb_y - (bomb_range + 1)][self.bomb_x] = 1
-                if i == 1:
-                    self.board[self.bomb_y][self.bomb_x - (bomb_range + 1)] = 0
-                    self.explode_board[self.bomb_y][self.bomb_x - (bomb_range + 1)] = 1
-                if i == 2:
-                    self.board[self.bomb_y + (bomb_range + 1)][self.bomb_x] = 0
-                    self.explode_board[self.bomb_y + (bomb_range + 1)][self.bomb_x] = 1
-                if i == 3:
-                    self.board[self.bomb_y][self.bomb_x + (bomb_range + 1)] = 0
-                    self.explode_board[self.bomb_y][self.bomb_x + (bomb_range + 1)] = 1
+                self.actual_explosion(i, bomb_range)
         self.side_ranges = []
 
     def explode_check(self):
