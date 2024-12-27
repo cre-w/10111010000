@@ -131,6 +131,8 @@ class Board:
         elif side == 3:
             y = 0
             x = step
+        if self.board[self.bomb_y + y][self.bomb_x + x] == self.player:
+            print("гойда")
         self.board[self.bomb_y + y][self.bomb_x + x] = 0
         self.explode_board[self.bomb_y + y][self.bomb_x + x] = 1
 
