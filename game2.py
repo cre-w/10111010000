@@ -14,13 +14,6 @@ def load_image(name, colorkey=None):
     return image
 
 
-class Bomb(pygame.sprite.Sprite):
-    image = load_image("bomb_3.png")
-    def __init__(self, *group):
-        super().__init__(*group)
-        self.image = Bomb.image
-        self.rect = self.image.get_rect()
-
 class Board:
     def __init__(self, width, height):
         self.width = width
@@ -67,15 +60,6 @@ class Board:
                         self.left + (j * self.cell_size) + 5, self.top + (i * self.cell_size) + 5,
                         self.cell_size - 10,
                         self.cell_size - 10))
-                if self.board[i][j] == 1:
-                    pygame.draw.circle(screen, "red", ((self.left + (j * self.cell_size)) + self.cell_size / 2,
-                                                       (self.top + (i * self.cell_size)) + self.cell_size / 2),
-                                       self.cell_size / 2 - 2,
-                                       width=2)
-                    pygame.draw.rect(screen, "white", (
-                        self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
-                        self.cell_size),
-                                     width=1)
                 elif self.board[i][j] == 2:
                     pygame.draw.rect(screen, "brown", (
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
@@ -92,7 +76,7 @@ class Board:
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
                         self.cell_size),
                                      width=1)
-                elif self.board[i][j] == 0:
+                else:
                     pygame.draw.rect(screen, "white", (
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
                         self.cell_size),
@@ -201,6 +185,28 @@ class Board:
         self.explode()
 
 
+class Bomb(pygame.sprite.Sprite):
+    image = load_image("bomb_3.png")
+
+    def __init__(self, *group):
+        super().__init__(*group)
+        self.image = Bomb.image
+        self.rect = self.image.get_rect()
+
+
+class Player(pygame.sprite.Sprite):
+    image = load_image("bomb_2.png")
+
+    def __init__(self, *group):
+        super().__init__(*group)
+        self.image = Player.image
+        self.rect = self.image.get_rect()
+
+    def update(self):
+        self.rect.x = board.x * board.cell_size + board.left + 5
+        self.rect.y = board.y * board.cell_size + board.top + 5
+
+
 if __name__ == '__main__':
     pygame.display.set_caption('bomber')
     size = width, height = 600, 400
@@ -213,6 +219,9 @@ if __name__ == '__main__':
     bomb_group = pygame.sprite.Group()
     bomb = Bomb()
     bomb_group.add(bomb)
+    player_group = pygame.sprite.Group()
+    player = Player()
+    player_group.add(player)
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -229,6 +238,8 @@ if __name__ == '__main__':
                 if event.key == pygame.K_RIGHT:
                     board.move_right()
         screen.fill((0, 0, 0))
+        player_group.update()
+        player_group.draw(screen)
         board.render(screen)
         clock.tick(fps)
         if board.bomb_placed:
