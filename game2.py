@@ -8,13 +8,25 @@ class Board:
         self.board = [[0] * width for _ in range(height)]
         self.board[4][0] = 2
         self.board[5][3] = 2
-        self.bomboard = [[0] * width for _ in range(height)]
+        self.board[1][0] = 2
+        self.board[5][0] = 2
+        self.board[6][4] = 2
+        self.bomb_board = [[0] * width for _ in range(height)]
         self.left = 10
         self.top = 10
         self.cell_size = 30
         self.x = 0
         self.y = 0
         self.player = self.board[self.x][self.y] = 1
+        self.bomb_placed = False
+        self.bomb_timer_fps = 0
+        self.bomb_x = 0
+        self.bomb_y = 0
+        self.bomb_range = 2
+        self.bomb_ranges = self.bomb_range
+        self.bomb_timer_length = 2
+        self.side_ranges = []
+        self.can_place_bombs = True
 
     def set_view(self, left, top, cell_size):
         self.left = left
@@ -24,7 +36,7 @@ class Board:
     def render(self, screen):
         for i in range(self.height):
             for j in range(self.width):
-                if self.bomboard[i][j] == 3:
+                if self.bomb_board[i][j] == 1:
                     pygame.draw.rect(screen, "green", (
                         self.left + (j * self.cell_size) + 5, self.top + (i * self.cell_size) + 5, self.cell_size - 10,
                         self.cell_size - 10))
@@ -57,43 +69,90 @@ class Board:
                                      width=1)
 
     def down(self):
-        if self.x + 1 != self.height and self.board[self.x + 1][self.y] != 2:
-            self.board[self.x][self.y] = 0
-            self.x += 1
-            self.board[self.x][self.y] = self.player
-            for i in range(len(self.bomboard)):
-                print(self.bomboard[i])
+        if self.y + 1 < self.height and self.board[self.y + 1][self.x] != 2 and self.bomb_board[self.y + 1][self.x] != 1:
+            self.board[self.y][self.x] = 0
+            self.y += 1
+            self.board[self.y][self.x] = self.player
         else:
-            self.board[self.x][self.y] = self.board[self.x][self.y]
+            self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def up(self):
-        if self.x - 1 != -1 and self.board[self.x - 1][self.y] != 2:
-            self.board[self.x][self.y] = 0
-            self.x -= 1
-            self.board[self.x][self.y] = self.player
+        if self.y - 1 >= 0 and self.board[self.y - 1][self.x] != 2 and self.bomb_board[self.y - 1][self.x] != 1:
+            self.board[self.y][self.x] = 0
+            self.y -= 1
+            self.board[self.y][self.x] = self.player
         else:
-            self.board[self.x][self.y] = self.board[self.x][self.y]
+            self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def left1(self):
-        if self.y - 1 != -1 and self.board[self.x][self.y - 1] != 2:
-            self.board[self.x][self.y] = 0
-            self.y -= 1
-            self.board[self.x][self.y] = self.player
+        if self.x - 1 >= 0 and self.board[self.y][self.x - 1] != 2 and self.bomb_board[self.y][self.x - 1] != 1:
+            self.board[self.y][self.x] = 0
+            self.x -= 1
+            self.board[self.y][self.x] = self.player
         else:
-            self.board[self.x][self.y] = self.board[self.x][self.y]
+            self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def right(self):
-        if self.y + 1 != self.width and self.board[self.x][self.y + 1] != 2:
-            self.board[self.x][self.y] = 0
-            self.y += 1
-            self.board[self.x][self.y] = self.player
+        if self.x + 1 < self.width and self.board[self.y][self.x + 1] != 2 and self.bomb_board[self.y][self.x + 1] != 1:
+            self.board[self.y][self.x] = 0
+            self.x += 1
+            self.board[self.y][self.x] = self.player
         else:
-            self.board[self.x][self.y] = self.board[self.x][self.y]
+            self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def bomb1(self):
-        self.bomboard[self.x][self.y] = 3
-        for i in range(len(self.bomboard)):
-            print(self.bomboard[i])
+        if self.can_place_bombs:
+            self.bomb_board[self.y][self.x] = 1
+            self.bomb_x = self.x
+            self.bomb_y = self.y
+            self.bomb_timer_fps = 0
+            self.bomb_placed = True
+            self.can_place_bombs = False
+
+
+    def explode(self):
+        all_sides_list = list(reversed(self.side_ranges))
+        for bomb_range, sides_list in enumerate(all_sides_list):
+            if not any(sides_list):
+                continue
+            for i, side in enumerate(sides_list):
+                print(i)
+                print(side)
+                if not side:
+                    continue
+                if i == 0:
+                    self.board[self.bomb_y - (bomb_range + 1)][self.bomb_x] = 0
+                if i == 1:
+                    self.board[self.bomb_y][self.bomb_x - (bomb_range + 1)] = 0
+                if i == 2:
+                    self.board[self.bomb_y + (bomb_range + 1)][self.bomb_x] = 0
+                if i == 3:
+                    self.board[self.bomb_y][self.bomb_x + (bomb_range + 1)] = 0
+        self.side_ranges = []
+
+
+
+
+    def explode_check(self):
+        top, left, bottom, right = False, False, False, False
+        if self.bomb_y - self.bomb_ranges >= 0:
+            top = True
+        if self.bomb_x - self.bomb_ranges >= 0:
+            left = True
+        if self.bomb_y + self.bomb_ranges < self.height:
+            bottom = True
+        if self.bomb_x + self.bomb_ranges < self.width:
+            right = True
+        self.side_ranges.append([top, left, bottom, right])
+        if self.bomb_ranges - 1:
+            self.bomb_ranges -= 1
+            self.explode_check()
+        else:
+            self.bomb_ranges = self.bomb_range
+        self.explode()
+
+
+
 
 
 if __name__ == '__main__':
@@ -103,6 +162,8 @@ if __name__ == '__main__':
     screen.fill('black')
     board = Board(5, 7)
     running = True
+    clock = pygame.time.Clock()
+    fps = 60
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -120,4 +181,11 @@ if __name__ == '__main__':
                     board.right()
         screen.fill((0, 0, 0))
         board.render(screen)
+        clock.tick(fps)
+        if board.bomb_placed:
+            board.bomb_timer_fps += 1
+            if board.bomb_timer_fps == fps * board.bomb_timer_length:
+                board.explode_check()
+                board.bomb_placed = False
+                board.can_place_bombs = True
         pygame.display.flip()
