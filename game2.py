@@ -12,6 +12,7 @@ class Board:
         self.board[5][0] = 2
         self.board[5][4] = 2
         self.board[6][4] = 3
+        self.score = 0
         self.bomb_board = [[0] * width for _ in range(height)]
         self.explode_board = [[0] * width for _ in range(height)]
         self.left = 10
@@ -36,6 +37,9 @@ class Board:
         self.cell_size = cell_size
 
     def render(self, screen):
+        font = pygame.font.Font(None, 50)
+        text = font.render(str(self.score), True, (100, 255, 100))
+        screen.blit(text, (500, 0))
         for i in range(self.height):
             for j in range(self.width):
                 if self.explode_board[i][j] == 1:
@@ -93,8 +97,7 @@ class Board:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def up(self):
-        if self.y - 1 >= 0 and self.board[self.y - 1][self.x] not in [2, 3] and self.bomb_board[self.y - 1][
-            self.x] != 1:
+        if self.y - 1 >= 0 and self.board[self.y - 1][self.x] not in [2, 3] and self.bomb_board[self.y - 1][self.x] != 1:
             self.board[self.y][self.x] = 0
             self.y -= 1
             self.board[self.y][self.x] = self.player
@@ -102,8 +105,7 @@ class Board:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def left1(self):
-        if self.x - 1 >= 0 and self.board[self.y][self.x - 1] not in [2, 3] and self.bomb_board[self.y][
-            self.x - 1] != 1:
+        if self.x - 1 >= 0 and self.board[self.y][self.x - 1] not in [2, 3] and self.bomb_board[self.y][self.x - 1] != 1:
             self.board[self.y][self.x] = 0
             self.x -= 1
             self.board[self.y][self.x] = self.player
@@ -111,8 +113,7 @@ class Board:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def right(self):
-        if self.x + 1 < self.width and self.board[self.y][self.x + 1] not in [2, 3] and self.bomb_board[self.y][
-            self.x + 1] != 1:
+        if self.x + 1 < self.width and self.board[self.y][self.x + 1] not in [2, 3] and self.bomb_board[self.y][self.x + 1] != 1:
             self.board[self.y][self.x] = 0
             self.x += 1
             self.board[self.y][self.x] = self.player
@@ -142,13 +143,11 @@ class Board:
         elif side == 3:
             y = 0
             x = step
-        if self.board[self.bomb_y + y][self.bomb_x + x] == self.player or self.board[self.bomb_y][
-            self.bomb_x] == self.player:
+        if self.board[self.bomb_y + y][self.bomb_x + x] == self.player or self.board[self.bomb_y][self.bomb_x] == self.player:
             exit()
         if self.board[self.bomb_y + y][self.bomb_x + x] == 3:
-            exit()
-        else:
-            self.board[self.bomb_y + y][self.bomb_x + x] = 0
+            self.score += 100
+        self.board[self.bomb_y + y][self.bomb_x + x] = 0
         self.explode_board[self.bomb_y + y][self.bomb_x + x] = 1
 
     def explode_clear(self):
@@ -186,8 +185,9 @@ class Board:
 
 
 if __name__ == '__main__':
+    pygame.init()
     pygame.display.set_caption('Чёрное в белое и наоборот')
-    size = width, height = 400, 400
+    size = width, height = 600, 600
     screen = pygame.display.set_mode(size)
     screen.fill('black')
     board = Board(5, 7)
