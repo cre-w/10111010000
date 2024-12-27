@@ -8,6 +8,7 @@ class Board:
         self.board = [[0] * width for _ in range(height)]
         self.board[4][0] = 2
         self.board[5][3] = 2
+        self.bomboard = [[0] * width for _ in range(height)]
         self.board[1][0] = 2
         self.board[5][0] = 2
         self.board[6][4] = 2
@@ -36,71 +37,98 @@ class Board:
     def render(self, screen):
         for i in range(self.height):
             for j in range(self.width):
-                if self.bomb_board[i][j] == 1:
-                    pygame.draw.rect(screen, "green", (
-                        self.left + (j * self.cell_size) + 5, self.top + (i * self.cell_size) + 5, self.cell_size - 10,
-                        self.cell_size - 10))
-                    pygame.draw.rect(screen, "white", (
-                        self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
-                        self.cell_size),
-                                     width=1)
-
-                elif self.board[i][j] == 1:
-                    pygame.draw.circle(screen, "red", ((self.left + (j * self.cell_size)) + self.cell_size / 2,
-                                                       (self.top + (i * self.cell_size)) + self.cell_size / 2),
-                                       self.cell_size / 2 - 2,
-                                       width=2)
-                    pygame.draw.rect(screen, "white", (
-                        self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
-                        self.cell_size),
-                                     width=1)
-                elif self.board[i][j] == 2:
-                    pygame.draw.rect(screen, "brown", (
-                        self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
-                        self.cell_size))
-                    pygame.draw.rect(screen, "white", (
-                        self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
-                        self.cell_size),
-                                     width=1)
-                elif self.board[i][j] == 0:
-                    pygame.draw.rect(screen, "white", (
-                        self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
-                        self.cell_size),
-                                     width=1)
+                if self.bomboard[i][j] == 3:
+                    if self.bomb_board[i][j] == 1:
+                        pygame.draw.rect(screen, "green", (
+                            self.left + (j * self.cell_size) + 5, self.top + (i * self.cell_size) + 5,
+                            self.cell_size - 10,
+                            self.cell_size - 10))
+                        pygame.draw.rect(screen, "white", (
+                            self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
+                            self.cell_size),
+                                         width=1)
+                    elif self.board[i][j] == 1:
+                        pygame.draw.circle(screen, "red", ((self.left + (j * self.cell_size)) + self.cell_size / 2,
+                                                           (self.top + (i * self.cell_size)) + self.cell_size / 2),
+                                           self.cell_size / 2 - 2,
+                                           width=2)
+                        pygame.draw.rect(screen, "white", (
+                            self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
+                            self.cell_size),
+                                         width=1)
+                    elif self.board[i][j] == 2:
+                        pygame.draw.rect(screen, "brown", (
+                            self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
+                            self.cell_size))
+                        pygame.draw.rect(screen, "white", (
+                            self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
+                            self.cell_size),
+                                         width=1)
+                    elif self.board[i][j] == 0:
+                        pygame.draw.rect(screen, "white", (
+                            self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
+                            self.cell_size),
+                                         width=1)
 
     def down(self):
-        if self.y + 1 < self.height and self.board[self.y + 1][self.x] != 2 and self.bomb_board[self.y + 1][self.x] != 1:
+        if self.x + 1 != self.height and self.board[self.x + 1][self.y] != 2:
+            self.board[self.x][self.y] = 0
+            self.x += 1
+            self.board[self.x][self.y] = self.player
+            for i in range(len(self.bomboard)):
+                print(self.bomboard[i])
+        if self.y + 1 < self.height and self.board[self.y + 1][self.x] != 2 and self.bomb_board[self.y + 1][
+            self.x] != 1:
             self.board[self.y][self.x] = 0
             self.y += 1
             self.board[self.y][self.x] = self.player
         else:
+            self.board[self.x][self.y] = self.board[self.x][self.y]
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def up(self):
+        if self.x - 1 != -1 and self.board[self.x - 1][self.y] != 2:
+            self.board[self.x][self.y] = 0
+            self.x -= 1
+            self.board[self.x][self.y] = self.player
         if self.y - 1 >= 0 and self.board[self.y - 1][self.x] != 2 and self.bomb_board[self.y - 1][self.x] != 1:
             self.board[self.y][self.x] = 0
             self.y -= 1
             self.board[self.y][self.x] = self.player
         else:
+            self.board[self.x][self.y] = self.board[self.x][self.y]
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def left1(self):
+        if self.y - 1 != -1 and self.board[self.x][self.y - 1] != 2:
+            self.board[self.x][self.y] = 0
+            self.y -= 1
+            self.board[self.x][self.y] = self.player
         if self.x - 1 >= 0 and self.board[self.y][self.x - 1] != 2 and self.bomb_board[self.y][self.x - 1] != 1:
             self.board[self.y][self.x] = 0
             self.x -= 1
             self.board[self.y][self.x] = self.player
         else:
+            self.board[self.x][self.y] = self.board[self.x][self.y]
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def right(self):
+        if self.y + 1 != self.width and self.board[self.x][self.y + 1] != 2:
+            self.board[self.x][self.y] = 0
+            self.y += 1
+            self.board[self.x][self.y] = self.player
         if self.x + 1 < self.width and self.board[self.y][self.x + 1] != 2 and self.bomb_board[self.y][self.x + 1] != 1:
             self.board[self.y][self.x] = 0
             self.x += 1
             self.board[self.y][self.x] = self.player
         else:
+            self.board[self.x][self.y] = self.board[self.x][self.y]
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def bomb1(self):
+        self.bomboard[self.x][self.y] = 3
+        for i in range(len(self.bomboard)):
+            print(self.bomboard[i])
         if self.can_place_bombs:
             self.bomb_board[self.y][self.x] = 1
             self.bomb_x = self.x
@@ -108,7 +136,6 @@ class Board:
             self.bomb_timer_fps = 0
             self.bomb_placed = True
             self.can_place_bombs = False
-
 
     def explode(self):
         all_sides_list = list(reversed(self.side_ranges))
@@ -130,9 +157,6 @@ class Board:
                     self.board[self.bomb_y][self.bomb_x + (bomb_range + 1)] = 0
         self.side_ranges = []
 
-
-
-
     def explode_check(self):
         top, left, bottom, right = False, False, False, False
         if self.bomb_y - self.bomb_ranges >= 0:
@@ -150,9 +174,6 @@ class Board:
         else:
             self.bomb_ranges = self.bomb_range
         self.explode()
-
-
-
 
 
 if __name__ == '__main__':
