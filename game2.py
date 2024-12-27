@@ -8,7 +8,6 @@ class Board:
         self.board = [[0] * width for _ in range(height)]
         self.board[4][0] = 2
         self.board[5][3] = 2
-        self.bomboard = [[0] * width for _ in range(height)]
         self.board[1][0] = 2
         self.board[5][0] = 2
         self.board[6][4] = 2
@@ -71,12 +70,6 @@ class Board:
                                          width=1)
 
     def down(self):
-        if self.x + 1 != self.height and self.board[self.x + 1][self.y] != 2:
-            self.board[self.x][self.y] = 0
-            self.x += 1
-            self.board[self.x][self.y] = self.player
-            for i in range(len(self.bomboard)):
-                print(self.bomboard[i])
         if self.y + 1 < self.height and self.board[self.y + 1][self.x] != 2 and self.bomb_board[self.y + 1][
             self.x] != 1:
             self.board[self.y][self.x] = 0
@@ -87,10 +80,6 @@ class Board:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def up(self):
-        if self.x - 1 != -1 and self.board[self.x - 1][self.y] != 2:
-            self.board[self.x][self.y] = 0
-            self.x -= 1
-            self.board[self.x][self.y] = self.player
         if self.y - 1 >= 0 and self.board[self.y - 1][self.x] != 2 and self.bomb_board[self.y - 1][self.x] != 1:
             self.board[self.y][self.x] = 0
             self.y -= 1
@@ -100,10 +89,6 @@ class Board:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def left1(self):
-        if self.y - 1 != -1 and self.board[self.x][self.y - 1] != 2:
-            self.board[self.x][self.y] = 0
-            self.y -= 1
-            self.board[self.x][self.y] = self.player
         if self.x - 1 >= 0 and self.board[self.y][self.x - 1] != 2 and self.bomb_board[self.y][self.x - 1] != 1:
             self.board[self.y][self.x] = 0
             self.x -= 1
@@ -113,10 +98,6 @@ class Board:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def right(self):
-        if self.y + 1 != self.width and self.board[self.x][self.y + 1] != 2:
-            self.board[self.x][self.y] = 0
-            self.y += 1
-            self.board[self.x][self.y] = self.player
         if self.x + 1 < self.width and self.board[self.y][self.x + 1] != 2 and self.bomb_board[self.y][self.x + 1] != 1:
             self.board[self.y][self.x] = 0
             self.x += 1
