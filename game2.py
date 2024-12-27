@@ -84,7 +84,7 @@ class Board:
                                      width=1)
 
     def down(self):
-        if self.y + 1 < self.height and self.board[self.y + 1][self.x] != 2 and self.bomb_board[self.y + 1][
+        if self.y + 1 < self.height and self.board[self.y + 1][self.x] not in [2, 3] and self.bomb_board[self.y + 1][
             self.x] != 1:
             self.board[self.y][self.x] = 0
             self.y += 1
@@ -93,7 +93,8 @@ class Board:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def up(self):
-        if self.y - 1 >= 0 and self.board[self.y - 1][self.x] != 2 and self.bomb_board[self.y - 1][self.x] != 1:
+        if self.y - 1 >= 0 and self.board[self.y - 1][self.x] not in [2, 3] and self.bomb_board[self.y - 1][
+            self.x] != 1:
             self.board[self.y][self.x] = 0
             self.y -= 1
             self.board[self.y][self.x] = self.player
@@ -101,7 +102,8 @@ class Board:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def left1(self):
-        if self.x - 1 >= 0 and self.board[self.y][self.x - 1] != 2 and self.bomb_board[self.y][self.x - 1] != 1:
+        if self.x - 1 >= 0 and self.board[self.y][self.x - 1] not in [2, 3] and self.bomb_board[self.y][
+            self.x - 1] != 1:
             self.board[self.y][self.x] = 0
             self.x -= 1
             self.board[self.y][self.x] = self.player
@@ -109,7 +111,8 @@ class Board:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def right(self):
-        if self.x + 1 < self.width and self.board[self.y][self.x + 1] != 2 and self.bomb_board[self.y][self.x + 1] != 1:
+        if self.x + 1 < self.width and self.board[self.y][self.x + 1] not in [2, 3] and self.bomb_board[self.y][
+            self.x + 1] != 1:
             self.board[self.y][self.x] = 0
             self.x += 1
             self.board[self.y][self.x] = self.player
@@ -139,7 +142,8 @@ class Board:
         elif side == 3:
             y = 0
             x = step
-        if self.board[self.bomb_y + y][self.bomb_x + x] == self.player or self.board[self.bomb_y][self.bomb_x] == self.player:
+        if self.board[self.bomb_y + y][self.bomb_x + x] == self.player or self.board[self.bomb_y][
+            self.bomb_x] == self.player:
             exit()
         if self.board[self.bomb_y + y][self.bomb_x + x] == 3:
             exit()
