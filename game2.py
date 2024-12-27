@@ -36,38 +36,37 @@ class Board:
     def render(self, screen):
         for i in range(self.height):
             for j in range(self.width):
-                if self.bomboard[i][j] == 3:
-                    if self.bomb_board[i][j] == 1:
-                        pygame.draw.rect(screen, "green", (
-                            self.left + (j * self.cell_size) + 5, self.top + (i * self.cell_size) + 5,
-                            self.cell_size - 10,
-                            self.cell_size - 10))
-                        pygame.draw.rect(screen, "white", (
-                            self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
-                            self.cell_size),
-                                         width=1)
-                    elif self.board[i][j] == 1:
-                        pygame.draw.circle(screen, "red", ((self.left + (j * self.cell_size)) + self.cell_size / 2,
-                                                           (self.top + (i * self.cell_size)) + self.cell_size / 2),
-                                           self.cell_size / 2 - 2,
-                                           width=2)
-                        pygame.draw.rect(screen, "white", (
-                            self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
-                            self.cell_size),
-                                         width=1)
-                    elif self.board[i][j] == 2:
-                        pygame.draw.rect(screen, "brown", (
-                            self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
-                            self.cell_size))
-                        pygame.draw.rect(screen, "white", (
-                            self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
-                            self.cell_size),
-                                         width=1)
-                    elif self.board[i][j] == 0:
-                        pygame.draw.rect(screen, "white", (
-                            self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
-                            self.cell_size),
-                                         width=1)
+                if self.bomb_board[i][j] == 1:
+                    pygame.draw.rect(screen, "green", (
+                        self.left + (j * self.cell_size) + 5, self.top + (i * self.cell_size) + 5,
+                        self.cell_size - 10,
+                        self.cell_size - 10))
+                    pygame.draw.rect(screen, "white", (
+                        self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
+                        self.cell_size),
+                                     width=1)
+                elif self.board[i][j] == 1:
+                    pygame.draw.circle(screen, "red", ((self.left + (j * self.cell_size)) + self.cell_size / 2,
+                                                       (self.top + (i * self.cell_size)) + self.cell_size / 2),
+                                       self.cell_size / 2 - 2,
+                                       width=2)
+                    pygame.draw.rect(screen, "white", (
+                        self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
+                        self.cell_size),
+                                     width=1)
+                elif self.board[i][j] == 2:
+                    pygame.draw.rect(screen, "brown", (
+                        self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
+                        self.cell_size))
+                    pygame.draw.rect(screen, "white", (
+                        self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
+                        self.cell_size),
+                                     width=1)
+                elif self.board[i][j] == 0:
+                    pygame.draw.rect(screen, "white", (
+                        self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
+                        self.cell_size),
+                                     width=1)
 
     def down(self):
         if self.y + 1 < self.height and self.board[self.y + 1][self.x] != 2 and self.bomb_board[self.y + 1][
@@ -107,9 +106,6 @@ class Board:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def bomb1(self):
-        self.bomboard[self.x][self.y] = 3
-        for i in range(len(self.bomboard)):
-            print(self.bomboard[i])
         if self.can_place_bombs:
             self.bomb_board[self.y][self.x] = 1
             self.bomb_x = self.x
