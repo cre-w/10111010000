@@ -10,8 +10,10 @@ class Board:
         self.board[5][3] = 2
         self.board[1][0] = 2
         self.board[5][0] = 2
+        self.board[5][4] = 2
         self.board[6][4] = 2
         self.bomb_board = [[0] * width for _ in range(height)]
+        self.explode_board = [[0] * width for _ in range(height)]
         self.left = 10
         self.top = 10
         self.cell_size = 30
@@ -22,7 +24,7 @@ class Board:
         self.bomb_timer_fps = 0
         self.bomb_x = 0
         self.bomb_y = 0
-        self.bomb_range = 2
+        self.bomb_range = 1
         self.bomb_ranges = self.bomb_range
         self.bomb_timer_length = 2
         self.side_ranges = []
@@ -36,7 +38,12 @@ class Board:
     def render(self, screen):
         for i in range(self.height):
             for j in range(self.width):
-                if self.bomb_board[i][j] == 1:
+                if self.explode_board[i][j] == 1:
+                    pygame.draw.rect(screen, "blue", (
+                        self.left + (j * self.cell_size) + 5, self.top + (i * self.cell_size) + 5,
+                        self.cell_size - 10,
+                        self.cell_size - 10))
+                elif self.bomb_board[i][j] == 1:
                     pygame.draw.rect(screen, "green", (
                         self.left + (j * self.cell_size) + 5, self.top + (i * self.cell_size) + 5,
                         self.cell_size - 10,
@@ -45,7 +52,7 @@ class Board:
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
                         self.cell_size),
                                      width=1)
-                elif self.board[i][j] == 1:
+                if self.board[i][j] == 1:
                     pygame.draw.circle(screen, "red", ((self.left + (j * self.cell_size)) + self.cell_size / 2,
                                                        (self.top + (i * self.cell_size)) + self.cell_size / 2),
                                        self.cell_size / 2 - 2,
@@ -120,12 +127,16 @@ class Board:
                     continue
                 if i == 0:
                     self.board[self.bomb_y - (bomb_range + 1)][self.bomb_x] = 0
+                    self.explode_board[self.bomb_y - (bomb_range + 1)][self.bomb_x] = 1
                 if i == 1:
                     self.board[self.bomb_y][self.bomb_x - (bomb_range + 1)] = 0
+                    self.explode_board[self.bomb_y][self.bomb_x - (bomb_range + 1)] = 1
                 if i == 2:
                     self.board[self.bomb_y + (bomb_range + 1)][self.bomb_x] = 0
+                    self.explode_board[self.bomb_y + (bomb_range + 1)][self.bomb_x] = 1
                 if i == 3:
                     self.board[self.bomb_y][self.bomb_x + (bomb_range + 1)] = 0
+                    self.explode_board[self.bomb_y][self.bomb_x + (bomb_range + 1)] = 1
         self.side_ranges = []
 
     def explode_check(self):
