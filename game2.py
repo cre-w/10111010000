@@ -75,7 +75,6 @@ class Board:
             self.y += 1
             self.board[self.y][self.x] = self.player
         else:
-            self.board[self.x][self.y] = self.board[self.x][self.y]
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def up(self):
@@ -84,7 +83,6 @@ class Board:
             self.y -= 1
             self.board[self.y][self.x] = self.player
         else:
-            self.board[self.x][self.y] = self.board[self.x][self.y]
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def left1(self):
@@ -93,7 +91,6 @@ class Board:
             self.x -= 1
             self.board[self.y][self.x] = self.player
         else:
-            self.board[self.x][self.y] = self.board[self.x][self.y]
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def right(self):
@@ -102,7 +99,6 @@ class Board:
             self.x += 1
             self.board[self.y][self.x] = self.player
         else:
-            self.board[self.x][self.y] = self.board[self.x][self.y]
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def bomb1(self):
@@ -120,8 +116,6 @@ class Board:
             if not any(sides_list):
                 continue
             for i, side in enumerate(sides_list):
-                print(i)
-                print(side)
                 if not side:
                     continue
                 if i == 0:
