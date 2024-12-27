@@ -134,6 +134,9 @@ class Board:
         self.board[self.bomb_y + y][self.bomb_x + x] = 0
         self.explode_board[self.bomb_y + y][self.bomb_x + x] = 1
 
+    def explode_clear(self):
+        self.explode_board = [[0] * width for _ in range(height)]
+
     def explode(self):
         all_sides_list = list(reversed(self.side_ranges))
         for bomb_range, sides_list in enumerate(all_sides_list):
@@ -197,4 +200,8 @@ if __name__ == '__main__':
                 board.explode_check()
                 board.bomb_placed = False
                 board.can_place_bombs = True
+        else:
+            board.bomb_timer_fps += 1
+            if board.bomb_timer_fps == fps * (board.bomb_timer_length + 0.25):
+                board.explode_clear()
         pygame.display.flip()
