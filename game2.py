@@ -147,6 +147,7 @@ class Board:
                     continue
                 self.actual_explosion(i, bomb_range)
         self.side_ranges = []
+        self.bomb_board = [[0] * self.width for _ in range(self.height)]
 
     def explode_check(self):
         top, left, bottom, right = False, False, False, False
