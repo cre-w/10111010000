@@ -19,6 +19,10 @@ explosion_frames = [load_image("explosion_frame_1.png"),
                     load_image("explosion_frame_4.png"),
                     load_image("explosion_frame_5.png"),
                     load_image("explosion_frame_6.png")]
+player_move = [load_image("player1.png"),
+               load_image("player2.png"),
+               load_image("player3.png"),
+               load_image("player4.png")]
 
 
 class Board:
@@ -41,6 +45,7 @@ class Board:
         self.score = 0
         self.bomb_timer_fps, self.bomb_x, self.bomb_y = 0, 0, 0
         self.player = self.board[self.x][self.y] = 1
+        self.player_move_counter = 1
         self.bomb_placed = False
         self.bomb_range = 2
         self.bomb_ranges = self.bomb_range
@@ -62,6 +67,16 @@ class Board:
             if self.explosion_frame_counter > 5:
                 self.explosion_frame_counter = 5
         return explosion_frames[self.explosion_frame_counter]
+
+    def player_render(self):
+        if self.player_move_counter == 1:
+            return player_move[1]
+        if self.player_move_counter == 2:
+            return player_move[2]
+        if self.player_move_counter == 3:
+            return player_move[3]
+        if self.player_move_counter == 4:
+            return player_move[4]
 
     def render(self, screen):
         font = pygame.font.Font(None, 50)
@@ -104,6 +119,7 @@ class Board:
             self.board[self.y][self.x] = 0
             self.y += 1
             self.board[self.y][self.x] = self.player
+            self.player_move_counter = 1
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
@@ -113,6 +129,7 @@ class Board:
             self.board[self.y][self.x] = 0
             self.y -= 1
             self.board[self.y][self.x] = self.player
+            self.player_move_counter = 3
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
@@ -122,6 +139,7 @@ class Board:
             self.board[self.y][self.x] = 0
             self.x -= 1
             self.board[self.y][self.x] = self.player
+            self.player_move_counter = 2
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
@@ -131,6 +149,7 @@ class Board:
             self.board[self.y][self.x] = 0
             self.x += 1
             self.board[self.y][self.x] = self.player
+            self.player_move_counter = 4
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
@@ -215,17 +234,17 @@ class Bomb(pygame.sprite.Sprite):
 
 
 class Player(pygame.sprite.Sprite):
-    image = load_image("bomb_2.png")
+    image = load_image('player1.png')
 
     def __init__(self, *group):
         super().__init__(*group)
-        self.image = Player.image
+        self.image = Board.player_render()
         self.rect = self.image.get_rect()
 
     def update(self):
-        self.image = Bomb.image
+        self.image = Board.player_render()
         self.rect.x = board.x * board.cell_size + board.left + 5
-        self.rect.y = board.y * board.cell_size + board.top + 5
+        self.rect.y = board.y * board.cell_size + board.top
 
 
 if __name__ == '__main__':
