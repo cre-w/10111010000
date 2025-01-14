@@ -8,7 +8,6 @@ pygame.init()
 def load_image(name):
     fullname = os.path.join('data', name)
     if not os.path.isfile(fullname):
-        print(f"Файл с изображением '{fullname}' не найден")
         sys.exit()
     image = pygame.image.load(fullname)
     return image
@@ -27,38 +26,33 @@ player_move = [load_image("player1.png"),
 
 
 class Board:
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
-        self.board = [[0] * width for _ in range(height)]
+    def __init__(self, board_width, board_height):
+        self.width = board_width
+        self.height = board_height
+        self.board = [[0] * self.width for _ in range(self.height)]
         self.board[4][0] = 2
         self.board[5][3] = 2
         self.board[1][0] = 2
         self.board[5][0] = 2
         self.board[5][4] = 2
         self.board[6][4] = 3
-        self.score = 0
-        self.bomb_board = [[0] * width for _ in range(height)]
-        self.explode_board = [[0] * width for _ in range(height)]
+        self.bomb_board = [[0] * self.width for _ in range(self.height)]
+        self.explode_board = [[0] * self.width for _ in range(self.height)]
         self.left = 10
         self.top = 10
         self.cell_size = 50
-        self.x = 0
-        self.y = 0
+        self.x, self.y = 0, 0
+        self.score = 0
+        self.bomb_timer_fps, self.bomb_x, self.bomb_y = 0, 0, 0
         self.player = self.board[self.x][self.y] = 1
+        self.player_move_counter = 1
         self.bomb_placed = False
-        self.bomb_timer_fps = 0
-        self.bomb_x = 0
-        self.bomb_y = 0
         self.bomb_range = 2
         self.bomb_ranges = self.bomb_range
         self.bomb_timer_length = 2
-        self.side_ranges = []
         self.can_place_bombs = True
-        self.explosion_frame_counter = 0
-        self.player_move_counter = 1
-        self.explosions = 0
-        self.explosion_counter = 0
+        self.side_ranges = []
+        self.explosion_frame_counter, self.explosions, self.explosion_counter = 0, 0, 0
 
     def set_view(self, left, top, cell_size):
         self.left = left
@@ -66,16 +60,22 @@ class Board:
         self.cell_size = cell_size
 
     def explosion_render(self):
+        self.explosion_counter += 1
+        if self.explosion_counter > self.explosions * 3:
+            self.explosion_frame_counter += 1
+            self.explosion_counter = 0
+            if self.explosion_frame_counter > 5:
+                self.explosion_frame_counter = 5
         return explosion_frames[self.explosion_frame_counter]
 
     def player_render(self):
-        if self.player_move_counte == 1:
+        if self.player_move_counter == 1:
             return player_move[1]
-        if self.player_move_counte == 2:
+        if self.player_move_counter == 2:
             return player_move[2]
-        if self.player_move_counte == 3:
+        if self.player_move_counter == 3:
             return player_move[3]
-        if self.player_move_counte == 4:
+        if self.player_move_counter == 4:
             return player_move[4]
 
     def render(self, screen):
@@ -91,13 +91,7 @@ class Board:
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
                         self.cell_size),
                                      width=1)
-                    self.explosion_counter += 1
-                    if self.explosion_counter > self.explosions * 3:
-                        self.explosion_frame_counter += 1
-                        self.explosion_counter = 0
-                        if self.explosion_frame_counter > 5:
-                            self.explosion_frame_counter = 0
-                elif self.board[i][j] == 2:
+                if self.board[i][j] == 2:
                     pygame.draw.rect(screen, "brown", (
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
                         self.cell_size))
@@ -146,7 +140,6 @@ class Board:
             self.x -= 1
             self.board[self.y][self.x] = self.player
             self.player_move_counter = 2
-
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
@@ -163,6 +156,8 @@ class Board:
     def bomb_placement(self):
         if self.can_place_bombs:
             self.explosions = 0
+            self.explosion_counter = 0
+            self.explosion_frame_counter = 0
             self.bomb_board[self.y][self.x] = 1
             self.bomb_x = self.x
             self.bomb_y = self.y
@@ -255,8 +250,8 @@ class Player(pygame.sprite.Sprite):
 if __name__ == '__main__':
     pygame.display.set_caption('bomber')
     size = width, height = 600, 400
-    screen = pygame.display.set_mode(size)
-    screen.fill('black')
+    main_screen = pygame.display.set_mode(size)
+    main_screen.fill('black')
     board = Board(10, 7)
     running = True
     clock = pygame.time.Clock()
@@ -282,14 +277,14 @@ if __name__ == '__main__':
                     board.move_left()
                 if event.key == pygame.K_RIGHT:
                     board.move_right()
-        screen.fill((0, 0, 0))
+        main_screen.fill('black')
         player_group.update()
-        player_group.draw(screen)
-        board.render(screen)
+        player_group.draw(main_screen)
+        board.render(main_screen)
         clock.tick(fps)
         if board.bomb_placed:
             board.bomb_timer_fps += 1
-            bomb_group.draw(screen)
+            bomb_group.draw(main_screen)
             if board.bomb_timer_fps == fps * board.bomb_timer_length:
                 board.explode_check()
                 board.bomb_placed = False
