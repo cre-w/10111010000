@@ -23,6 +23,7 @@ player_move = [load_image("player1.png"),
                load_image("player2.png"),
                load_image("player3.png"),
                load_image("player4.png")]
+player_move_counter = 1
 
 
 class Board:
@@ -45,7 +46,6 @@ class Board:
         self.score = 0
         self.bomb_timer_fps, self.bomb_x, self.bomb_y = 0, 0, 0
         self.player = self.board[self.x][self.y] = 1
-        self.player_move_counter = 1
         self.bomb_placed = False
         self.bomb_range = 2
         self.bomb_ranges = self.bomb_range
@@ -67,16 +67,6 @@ class Board:
             if self.explosion_frame_counter > 5:
                 self.explosion_frame_counter = 5
         return explosion_frames[self.explosion_frame_counter]
-
-    def player_render(self):
-        if self.player_move_counter == 1:
-            return player_move[1]
-        if self.player_move_counter == 2:
-            return player_move[2]
-        if self.player_move_counter == 3:
-            return player_move[3]
-        if self.player_move_counter == 4:
-            return player_move[4]
 
     def render(self, screen):
         font = pygame.font.Font(None, 50)
@@ -114,44 +104,48 @@ class Board:
                                      width=1)
 
     def move_down(self):
+        global player_move_counter
         if self.y + 1 < self.height and self.board[self.y + 1][self.x] not in [2, 3] and self.bomb_board[self.y + 1][
             self.x] != 1:
             self.board[self.y][self.x] = 0
             self.y += 1
             self.board[self.y][self.x] = self.player
-            self.player_move_counter = 1
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
+        player_move_counter = 1
 
     def move_up(self):
+        global player_move_counter
         if self.y - 1 >= 0 and self.board[self.y - 1][self.x] not in [2, 3] and self.bomb_board[self.y - 1][
             self.x] != 1:
             self.board[self.y][self.x] = 0
             self.y -= 1
             self.board[self.y][self.x] = self.player
-            self.player_move_counter = 3
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
+        player_move_counter = 3
 
     def move_left(self):
+        global player_move_counter
         if self.x - 1 >= 0 and self.board[self.y][self.x - 1] not in [2, 3] and self.bomb_board[self.y][
             self.x - 1] != 1:
             self.board[self.y][self.x] = 0
             self.x -= 1
             self.board[self.y][self.x] = self.player
-            self.player_move_counter = 2
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
+        player_move_counter = 2
 
     def move_right(self):
+        global player_move_counter
         if self.x + 1 < self.width and self.board[self.y][self.x + 1] not in [2, 3] and self.bomb_board[self.y][
             self.x + 1] != 1:
             self.board[self.y][self.x] = 0
             self.x += 1
             self.board[self.y][self.x] = self.player
-            self.player_move_counter = 4
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
+        player_move_counter = 4
 
     def bomb_placement(self):
         if self.can_place_bombs:
@@ -238,11 +232,11 @@ class Player(pygame.sprite.Sprite):
 
     def __init__(self, *group):
         super().__init__(*group)
-        self.image = Board.player_render()
+        self.image = Player.image
         self.rect = self.image.get_rect()
 
     def update(self):
-        self.image = Board.player_render()
+        self.image = player_move[player_move_counter - 1]
         self.rect.x = board.x * board.cell_size + board.left + 5
         self.rect.y = board.y * board.cell_size + board.top
 
