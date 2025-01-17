@@ -1,3 +1,6 @@
+import sqlite3
+from random import randint
+
 import pygame
 import os
 import sys
@@ -26,17 +29,26 @@ player_move = [load_image("player1.png"),
 player_move_counter = 1
 
 
+# noinspection PyUnboundLocalVariable
 class Board:
     def __init__(self, board_width, board_height):
+        self.connection = sqlite3.connect("pg_game_db")
+        self.current_player = 1
         self.width = board_width
         self.height = board_height
         self.board = [[0] * self.width for _ in range(self.height)]
+        # 1 - player
+        # 2 - wall
+        # 3 - golden barrel (end)
+        # 4 - range upgrade
+        # 5 - timer upgrade
         self.board[4][0] = 2
         self.board[5][3] = 2
         self.board[1][0] = 2
         self.board[5][0] = 2
         self.board[5][4] = 2
         self.board[6][4] = 3
+        self.wall_amount = 5
         self.bomb_board = [[0] * self.width for _ in range(self.height)]
         self.explode_board = [[0] * self.width for _ in range(self.height)]
         self.left = 10
@@ -53,6 +65,8 @@ class Board:
         self.can_place_bombs = True
         self.side_ranges = []
         self.explosion_frame_counter, self.explosions, self.explosion_counter = 0, 0, 0
+        self.all_upgrades = ['range', 'timer']
+        self.upgrades_left = self.all_upgrades.copy()
 
     def set_view(self, left, top, cell_size):
         self.left = left
@@ -93,6 +107,22 @@ class Board:
                     pygame.draw.rect(screen, "yellow", (
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
                         self.cell_size))
+                    pygame.draw.rect(screen, "white", (
+                        self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
+                        self.cell_size),
+                                     width=1)
+                elif self.board[i][j] == 4:
+                    pygame.draw.circle(screen, 'blue', (self.left + (j * self.cell_size) + self.cell_size // 2,
+                                                        self.top + (i * self.cell_size) + self.cell_size // 2),
+                                       self.cell_size // 2 - 2)
+                    pygame.draw.rect(screen, "white", (
+                        self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
+                        self.cell_size),
+                                     width=1)
+                elif self.board[i][j] == 5:
+                    pygame.draw.circle(screen, 'green', (self.left + (j * self.cell_size) + self.cell_size // 2,
+                                                         self.top + (i * self.cell_size) + self.cell_size // 2),
+                                       self.cell_size // 2 - 2)
                     pygame.draw.rect(screen, "white", (
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
                         self.cell_size),
@@ -172,7 +202,7 @@ class Board:
         elif side == 2:
             y = step
             x = 0
-        elif side == 3:
+        else:
             y = 0
             x = step
         if self.board[self.bomb_y + y][self.bomb_x + x] == self.player or self.board[self.bomb_y][
@@ -180,7 +210,25 @@ class Board:
             exit()
         if self.board[self.bomb_y + y][self.bomb_x + x] == 3:
             self.score += 100
-        self.board[self.bomb_y + y][self.bomb_x + x] = 0
+            cursor = self.connection.cursor()
+            cursor.execute("UPDATE users SET user_xp = user_xp + 100 WHERE user_id = ?", (self.current_player,))
+            self.connection.commit()
+        upgrade_placed = False
+        if self.board[self.bomb_y + y][self.bomb_x + x] == 2 and self.upgrades_left:
+            rand_gen_numb_1 = randint(1, self.wall_amount)
+            self.wall_amount -= 1
+            if rand_gen_numb_1 == 1:
+                rand_gen_numb_2 = randint(1, len(self.upgrades_left))
+                upgrade = self.upgrades_left[rand_gen_numb_2 - 1]
+                if upgrade == 'range':
+                    upgrade_number = 4
+                if upgrade == 'timer':
+                    upgrade_number = 5
+                self.upgrades_left.pop(rand_gen_numb_2 - 1)
+                self.board[self.bomb_y + y][self.bomb_x + x] = upgrade_number
+                upgrade_placed = True
+        if not upgrade_placed:
+            self.board[self.bomb_y + y][self.bomb_x + x] = 0
         self.explode_board[self.bomb_y + y][self.bomb_x + x] = 1
         self.explosions += 1
 
