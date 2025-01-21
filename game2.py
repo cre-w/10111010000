@@ -1,6 +1,5 @@
 import sqlite3
 from random import randint
-
 import pygame
 import os
 import sys
@@ -34,21 +33,31 @@ class Board:
     def __init__(self, board_width, board_height):
         self.connection = sqlite3.connect("pg_game_db")
         self.current_player = 1
-        self.width = board_width
-        self.height = board_height
+        self.width = board_width  # 7
+        self.height = board_height  # 10
         self.board = [[0] * self.width for _ in range(self.height)]
-        # 1 - player
-        # 2 - wall
-        # 3 - golden barrel (end)
+        # 9 - player
+        # 1 - wall
+        # 2 - golden barrel (the end goal)
+        # 3 - blast resistant walls (can't blow them up)
         # 4 - range upgrade
         # 5 - timer upgrade
-        self.board[4][0] = 2
-        self.board[5][3] = 2
-        self.board[1][0] = 2
-        self.board[5][0] = 2
-        self.board[5][4] = 2
-        self.board[6][4] = 3
-        self.wall_amount = 5
+        self.wall_amount = 0
+        self.board_id = 1
+        self.board_txt = \
+            list(self.connection.cursor().execute("SELECT field_composition FROM bomber_fields WHERE field_id = ?",
+                                                  (self.board_id,)))[0][0]
+        self.board_splitted = self.board_txt.split()
+        for i in range(self.height):
+            for j in range(self.width):
+                if self.board_splitted[i][j] == ".":
+                    tile = 0
+                elif self.board_splitted[i][j] == "#":
+                    tile = 1
+                    self.wall_amount += 1
+                else:
+                    tile = 2
+                self.board[i][j] = tile
         self.bomb_board = [[0] * self.width for _ in range(self.height)]
         self.explode_board = [[0] * self.width for _ in range(self.height)]
         self.left = 10
@@ -57,9 +66,9 @@ class Board:
         self.x, self.y = 0, 0
         self.score = 0
         self.bomb_timer_fps, self.bomb_x, self.bomb_y = 0, 0, 0
-        self.player = self.board[self.x][self.y] = 1
+        self.player = self.board[self.x][self.y] = 9
         self.bomb_placed = False
-        self.bomb_range = 2
+        self.bomb_range = 1
         self.bomb_ranges = self.bomb_range
         self.bomb_timer_length = 2
         self.can_place_bombs = True
@@ -95,7 +104,7 @@ class Board:
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
                         self.cell_size),
                                      width=1)
-                if self.board[i][j] == 2:
+                if self.board[i][j] == 1:
                     pygame.draw.rect(screen, "brown", (
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
                         self.cell_size))
@@ -103,7 +112,7 @@ class Board:
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
                         self.cell_size),
                                      width=1)
-                elif self.board[i][j] == 3:
+                elif self.board[i][j] == 2:
                     pygame.draw.rect(screen, "yellow", (
                         self.left + (j * self.cell_size), self.top + (i * self.cell_size), self.cell_size,
                         self.cell_size))
@@ -133,10 +142,24 @@ class Board:
                         self.cell_size),
                                      width=1)
 
+    def upgrade_checker(self, y_move, x_move):
+        if self.board[self.y + y_move][self.x + x_move] == 4:
+            self.bomb_range += 1
+            self.bomb_ranges = self.bomb_range
+        elif self.board[self.y + y_move][self.x + x_move] == 5:
+            self.bomb_timer_length -= 0.5
+        else:
+            return
+        self.score += 50
+        cursor = self.connection.cursor()
+        cursor.execute("UPDATE user_data SET user_score = user_score + 50")
+        cursor.close()
+
     def move_down(self):
         global player_move_counter
-        if self.y + 1 < self.height and self.board[self.y + 1][self.x] not in [2, 3] and self.bomb_board[self.y + 1][
+        if self.y + 1 < self.height and self.board[self.y + 1][self.x] not in [1, 2] and self.bomb_board[self.y + 1][
             self.x] != 1:
+            self.upgrade_checker(1, 0)
             self.board[self.y][self.x] = 0
             self.y += 1
             self.board[self.y][self.x] = self.player
@@ -146,8 +169,9 @@ class Board:
 
     def move_up(self):
         global player_move_counter
-        if self.y - 1 >= 0 and self.board[self.y - 1][self.x] not in [2, 3] and self.bomb_board[self.y - 1][
+        if self.y - 1 >= 0 and self.board[self.y - 1][self.x] not in [1, 2] and self.bomb_board[self.y - 1][
             self.x] != 1:
+            self.upgrade_checker(-1, 0)
             self.board[self.y][self.x] = 0
             self.y -= 1
             self.board[self.y][self.x] = self.player
@@ -157,8 +181,9 @@ class Board:
 
     def move_left(self):
         global player_move_counter
-        if self.x - 1 >= 0 and self.board[self.y][self.x - 1] not in [2, 3] and self.bomb_board[self.y][
+        if self.x - 1 >= 0 and self.board[self.y][self.x - 1] not in [1, 2] and self.bomb_board[self.y][
             self.x - 1] != 1:
+            self.upgrade_checker(0, -1)
             self.board[self.y][self.x] = 0
             self.x -= 1
             self.board[self.y][self.x] = self.player
@@ -168,8 +193,9 @@ class Board:
 
     def move_right(self):
         global player_move_counter
-        if self.x + 1 < self.width and self.board[self.y][self.x + 1] not in [2, 3] and self.bomb_board[self.y][
+        if self.x + 1 < self.width and self.board[self.y][self.x + 1] not in [1, 2] and self.bomb_board[self.y][
             self.x + 1] != 1:
+            self.upgrade_checker(0, 1)
             self.board[self.y][self.x] = 0
             self.x += 1
             self.board[self.y][self.x] = self.player
@@ -208,16 +234,19 @@ class Board:
         if self.board[self.bomb_y + y][self.bomb_x + x] == self.player or self.board[self.bomb_y][
             self.bomb_x] == self.player:
             exit()
-        if self.board[self.bomb_y + y][self.bomb_x + x] == 3:
-            self.score += 100
+        if self.board[self.bomb_y + y][self.bomb_x + x] == 2:
+            self.score += 200
             cursor = self.connection.cursor()
-            cursor.execute("UPDATE users SET user_xp = user_xp + 100 WHERE user_id = ?", (self.current_player,))
+            cursor.execute("UPDATE user_data SET user_score = user_score + 200")
+            cursor.execute("UPDATE user_data SET user_wins = user_wins + 1")
+            cursor.execute("UPDATE user_data SET previously_played_board_id = ?", (self.board_id,))
             self.connection.commit()
+            cursor.close()
         upgrade_placed = False
-        if self.board[self.bomb_y + y][self.bomb_x + x] == 2 and self.upgrades_left:
+        if self.board[self.bomb_y + y][self.bomb_x + x] == 1 and self.upgrades_left:
             rand_gen_numb_1 = randint(1, self.wall_amount)
             self.wall_amount -= 1
-            if rand_gen_numb_1 == 1:
+            if rand_gen_numb_1 in [1, 2, 3]:
                 rand_gen_numb_2 = randint(1, len(self.upgrades_left))
                 upgrade = self.upgrades_left[rand_gen_numb_2 - 1]
                 if upgrade == 'range':
