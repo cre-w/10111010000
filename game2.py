@@ -3,12 +3,7 @@ from random import randint
 
 import pygame
 import os
-import sqlite3
-from PIL import Image
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLineEdit, QPushButton, QPlainTextEdit, QWidget
-from PyQt6.QtWidgets import QLabel, QTableWidget, QTableWidgetItem, QMessageBox
-from PyQt6.QtGui import QPixmap
 
 pygame.init()
 
@@ -35,7 +30,7 @@ player_move_counter = 1
 
 
 # noinspection PyUnboundLocalVariable
-class Board(QMainWindow):
+class Board:
     def __init__(self, board_width, board_height):
         self.connection = sqlite3.connect("pg_game_db")
         self.current_player = 1
@@ -50,8 +45,6 @@ class Board(QMainWindow):
         self.board[4][0] = 2
         self.board[5][3] = 2
         self.board[1][0] = 2
-        self.board[1][2] = 2
-        self.board[1][3] = 2
         self.board[5][0] = 2
         self.board[5][4] = 2
         self.board[6][4] = 3
@@ -222,19 +215,15 @@ class Board(QMainWindow):
             self.connection.commit()
         upgrade_placed = False
         if self.board[self.bomb_y + y][self.bomb_x + x] == 2 and self.upgrades_left:
-            rand_gen_numb_1 = 1
-            """randint(1, self.wall_amount)"""
+            rand_gen_numb_1 = randint(1, self.wall_amount)
             self.wall_amount -= 1
             if rand_gen_numb_1 == 1:
                 rand_gen_numb_2 = randint(1, len(self.upgrades_left))
                 upgrade = self.upgrades_left[rand_gen_numb_2 - 1]
                 if upgrade == 'range':
                     upgrade_number = 4
-                    self.bomb_range += 1
-                    self.bomb_ranges = self.bomb_range
                 if upgrade == 'timer':
                     upgrade_number = 5
-                    self.bomb_timer_length -= 0.5
                 self.upgrades_left.pop(rand_gen_numb_2 - 1)
                 self.board[self.bomb_y + y][self.bomb_x + x] = upgrade_number
                 upgrade_placed = True
@@ -300,79 +289,50 @@ class Player(pygame.sprite.Sprite):
         self.rect.y = board.y * board.cell_size + board.top
 
 
-class Main(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.initUI()
-
-    def initUI(self):
-        self.setGeometry(300, 300, 450, 300)
-        self.setWindowTitle('Bomber')
-
-        self.new_txt_button = QPushButton("Играть", self)
-        self.new_txt_button.move(75, 70)
-        self.new_txt_button.resize(300, 50)
-        self.new_txt_button.clicked.connect(self.game)
-
-        self.new_txt_button = QPushButton("Выйти", self)
-        self.new_txt_button.move(75, 170)
-        self.new_txt_button.resize(300, 50)
-        self.new_txt_button.clicked.connect(self.exit1)
-
-    def exit1(self):
-        exit()
-    def game(self):
-        pygame.display.set_caption('bomber')
-        size = width, height = 600, 400
-        main_screen = pygame.display.set_mode(size)
-        main_screen.fill('black')
-        board = Board(10, 7)
-        running = True
-        clock = pygame.time.Clock()
-        fps = 60
-        bomb_group = pygame.sprite.Group()
-        bomb = Bomb()
-        bomb_group.add(bomb)
-        player_group = pygame.sprite.Group()
-        player = Player()
-        player_group.add(player)
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_SPACE:
-                        board.bomb_placement()
-                    if event.key == pygame.K_DOWN:
-                        board.move_down()
-                    if event.key == pygame.K_UP:
-                        board.move_up()
-                    if event.key == pygame.K_LEFT:
-                        board.move_left()
-                    if event.key == pygame.K_RIGHT:
-                        board.move_right()
-            main_screen.fill('black')
-            player_group.update()
-            player_group.draw(main_screen)
-            board.render(main_screen)
-            clock.tick(fps)
-            if board.bomb_placed:
-                board.bomb_timer_fps += 1
-                bomb_group.draw(main_screen)
-                if board.bomb_timer_fps == fps * board.bomb_timer_length:
-                    board.explode_check()
-                    board.bomb_placed = False
-                    board.can_place_bombs = True
-            else:
-                board.bomb_timer_fps += 1
-                if board.bomb_timer_fps == fps * (board.bomb_timer_length + 0.25):
-                    board.explode_clear()
-            pygame.display.flip()
-
-
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    window = Main()
-    window.show()
-    sys.exit(app.exec())
-
+    pygame.display.set_caption('bomber')
+    size = width, height = 600, 400
+    main_screen = pygame.display.set_mode(size)
+    main_screen.fill('black')
+    board = Board(10, 7)
+    running = True
+    clock = pygame.time.Clock()
+    fps = 60
+    bomb_group = pygame.sprite.Group()
+    bomb = Bomb()
+    bomb_group.add(bomb)
+    player_group = pygame.sprite.Group()
+    player = Player()
+    player_group.add(player)
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    board.bomb_placement()
+                if event.key == pygame.K_DOWN:
+                    board.move_down()
+                if event.key == pygame.K_UP:
+                    board.move_up()
+                if event.key == pygame.K_LEFT:
+                    board.move_left()
+                if event.key == pygame.K_RIGHT:
+                    board.move_right()
+        main_screen.fill('black')
+        player_group.update()
+        player_group.draw(main_screen)
+        board.render(main_screen)
+        clock.tick(fps)
+        if board.bomb_placed:
+            board.bomb_timer_fps += 1
+            bomb_group.draw(main_screen)
+            if board.bomb_timer_fps == fps * board.bomb_timer_length:
+                board.explode_check()
+                board.bomb_placed = False
+                board.can_place_bombs = True
+        else:
+            board.bomb_timer_fps += 1
+            if board.bomb_timer_fps == fps * (board.bomb_timer_length + 0.25):
+                board.explode_clear()
+        pygame.display.flip()
