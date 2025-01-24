@@ -30,57 +30,74 @@ WIDTH, HEIGHT = 600, 400
 BOARD_WIDTH, BOARD_HEIGHT = 10, 7
 
 
-# noinspection PyUnboundLocalVariable
 class Board:
     def __init__(self, board_width, board_height):
         self.CONNECTION = sqlite3.connect("pg_game_db")
         self.WIDTH = board_width
         self.HEIGHT = board_height
         self.board = [[0] * self.WIDTH for _ in range(self.HEIGHT)]
-        # 1 - wall
-        # 2 - golden barrel (the end goal)
-        # 3 - blast resistant walls (can't blow them up)
-        # 4 - range upgrade
-        # 5 - timer upgrade
+        self.PLAYER = 9
+        self.WALL = 1
+        self.GOLDEN_BARREL = 2  # (the end goal)
+        # self.BLAST_RESISTANT_WALL = 3 # (can't blow them up)
+        self.RANGE_UPGRADE = 4
+        self.TIMER_UPGRADE = 5
+        self.BOMB_AMOUNT_UPGRADE = 6
         self.wall_amount = 0
-        self.board_id = 1
-        self.board_txt = \
-            list(self.CONNECTION.cursor().execute("SELECT field_composition FROM bomber_fields WHERE field_id = ?",
-                                                  (self.board_id,)))[0][0]
+        cursor = self.CONNECTION.cursor()
+        saved_game_check = list(cursor.execute("SELECT saved FROM saved_on_quitting_info"))[0][0]
+        self.explosion_frame_counter, self.explosions, self.explosion_counter = 0, 0, 0
+        self.can_place_bombs = True
+        self.side_ranges = []
+        self.bomb_board = [[0] * self.WIDTH for _ in range(self.HEIGHT)]
+        self.explode_board = [[0] * self.WIDTH for _ in range(self.HEIGHT)]
+        self.LEFT = 40
+        self.TOP = 40
+        self.CELL_SIZE = 50
+        self.bomb_timer_fps, self.bomb_x, self.bomb_y = 0, 0, 0
+        self.ALL_UPGRADES = ['range', 'timer', 'bomb']
+        self.bomb_placed = False
+        if saved_game_check == 1:
+            self.board_txt = list(cursor.execute("SELECT saved_board FROM saved_on_quitting_info"))[0][0]
+            self.board_id = list(cursor.execute("SELECT saved_board_id FROM saved_on_quitting_info"))[0][0]
+            self.bomb_amount = list(cursor.execute("SELECT bombs_left FROM saved_on_quitting_info"))[0][0]
+            self.bomb_range = list(cursor.execute("SELECT bomb_range FROM saved_on_quitting_info"))[0][0]
+            self.bomb_timer_length = list(cursor.execute("SELECT bomb_timer FROM saved_on_quitting_info"))[0][0]
+            self.score = list(cursor.execute("SELECT current_board_score FROM saved_on_quitting_info"))[0][0]
+            self.upgrades_left = list(cursor.execute("SELECT upgrades_left FROM saved_on_quitting_info"))[0][0].split()
+        else:
+            cursor.execute("UPDATE saved_on_quitting_info SET win = 0")
+            self.previous_board = list(cursor.execute("SELECT previously_played_board_id FROM user_data"))[0][0]
+            self.board_id = randint(1, list(cursor.execute("SELECT COUNT(*) FROM bomber_fields"))[0][0])
+            while self.board_id == self.previous_board:
+                self.board_id = randint(1, list(cursor.execute("SELECT COUNT(*) FROM bomber_fields"))[0][0])
+            self.board_txt = list(cursor.execute("SELECT field_composition FROM bomber_fields WHERE field_id = ?", (self.board_id,)))[0][0]
+            self.score = 0
+            self.bomb_range = 1
+            self.bomb_timer_length = 2
+            self.bomb_amount = \
+                list(cursor.execute("SELECT bomb_amount FROM bomber_fields WHERE field_id = ?",
+                                    (self.board_id,)))[0][0]
+            self.upgrades_left = self.ALL_UPGRADES.copy()
         self.board_splitted = self.board_txt.split()
         for i in range(self.HEIGHT):
             for j in range(self.WIDTH):
                 if self.board_splitted[i][j] == ".":
                     tile = 0
                 elif self.board_splitted[i][j] == "#":
-                    tile = 1
+                    tile = self.WALL
                     self.wall_amount += 1
+                #elif self.board_splitted[i][j] == #E:
+                    #tile = self.BLAST_RESISTANT_WALL"""
                 elif self.board_splitted[i][j] == "P":
-                    tile = 9
+                    tile = self.PLAYER
                     self.x = j
                     self.y = i
                 else:
                     tile = 2
                 self.board[i][j] = tile
-        self.bomb_board = [[0] * self.WIDTH for _ in range(self.HEIGHT)]
-        self.explode_board = [[0] * self.WIDTH for _ in range(self.HEIGHT)]
-        self.LEFT = 30
-        self.TOP = 30
-        self.CELL_SIZE = 50
-        self.score = 0
-        self.bomb_timer_fps, self.bomb_x, self.bomb_y = 0, 0, 0
-        self.bomb_placed = False
-        self.bomb_range = 1
         self.bomb_ranges = self.bomb_range
-        self.bomb_timer_length = 2
-        self.bomb_amount = \
-            list(self.CONNECTION.cursor().execute("SELECT bomb_amount FROM bomber_fields WHERE field_id = ?",
-                                                  (self.board_id,)))[0][0]
-        self.can_place_bombs = True
-        self.side_ranges = []
-        self.explosion_frame_counter, self.explosions, self.explosion_counter = 0, 0, 0
-        self.ALL_UPGRADES = ['range', 'timer']
-        self.upgrades_left = self.ALL_UPGRADES.copy()
+        cursor.close()
 
     def explosion_render(self):
         self.explosion_counter += 1
@@ -92,9 +109,13 @@ class Board:
         return EXPLOSION_FRAMES[self.explosion_frame_counter]
 
     def render(self, screen):
-        font = pygame.font.Font(None, 50)
-        text = font.render(str(self.score), True, (100, 255, 100))
-        screen.blit(text, (520, 0))
+        font = pygame.font.Font(None, 30)
+        score_string = "Score: " + str(self.score)
+        score = font.render(score_string, True, (100, 255, 100))
+        bomb_counter = "Bombs left: " + str(self.bomb_amount)
+        bomb_count = font.render(bomb_counter, True, (100, 255, 100))
+        screen.blit(score, (WIDTH - 11 * len(score_string), self.TOP // 5))
+        screen.blit(bomb_count, (WIDTH - 11 * len(bomb_counter) - 11 * len(score_string), self.TOP // 5))
         for i in range(self.HEIGHT):
             for j in range(self.WIDTH):
                 if self.explode_board[i][j] == 1:
@@ -104,7 +125,7 @@ class Board:
                         self.LEFT + (j * self.CELL_SIZE), self.TOP + (i * self.CELL_SIZE), self.CELL_SIZE,
                         self.CELL_SIZE),
                                      width=1)
-                if self.board[i][j] == 1:
+                if self.board[i][j] == self.WALL:
                     pygame.draw.rect(screen, "brown", (
                         self.LEFT + (j * self.CELL_SIZE), self.TOP + (i * self.CELL_SIZE), self.CELL_SIZE,
                         self.CELL_SIZE))
@@ -112,7 +133,7 @@ class Board:
                         self.LEFT + (j * self.CELL_SIZE), self.TOP + (i * self.CELL_SIZE), self.CELL_SIZE,
                         self.CELL_SIZE),
                                      width=1)
-                elif self.board[i][j] == 2:
+                elif self.board[i][j] == self.GOLDEN_BARREL:
                     pygame.draw.rect(screen, "yellow", (
                         self.LEFT + (j * self.CELL_SIZE), self.TOP + (i * self.CELL_SIZE), self.CELL_SIZE,
                         self.CELL_SIZE))
@@ -120,7 +141,7 @@ class Board:
                         self.LEFT + (j * self.CELL_SIZE), self.TOP + (i * self.CELL_SIZE), self.CELL_SIZE,
                         self.CELL_SIZE),
                                      width=1)
-                elif self.board[i][j] == 4:
+                elif self.board[i][j] == self.RANGE_UPGRADE:
                     pygame.draw.circle(screen, 'blue', (self.LEFT + (j * self.CELL_SIZE) + self.CELL_SIZE // 2,
                                                         self.TOP + (i * self.CELL_SIZE) + self.CELL_SIZE // 2),
                                        self.CELL_SIZE // 2 - 2)
@@ -128,9 +149,17 @@ class Board:
                         self.LEFT + (j * self.CELL_SIZE), self.TOP + (i * self.CELL_SIZE), self.CELL_SIZE,
                         self.CELL_SIZE),
                                      width=1)
-                elif self.board[i][j] == 5:
+                elif self.board[i][j] == self.TIMER_UPGRADE:
                     pygame.draw.circle(screen, 'green', (self.LEFT + (j * self.CELL_SIZE) + self.CELL_SIZE // 2,
                                                          self.TOP + (i * self.CELL_SIZE) + self.CELL_SIZE // 2),
+                                       self.CELL_SIZE // 2 - 2)
+                    pygame.draw.rect(screen, "white", (
+                        self.LEFT + (j * self.CELL_SIZE), self.TOP + (i * self.CELL_SIZE), self.CELL_SIZE,
+                        self.CELL_SIZE),
+                                     width=1)
+                elif self.board[i][j] == self.BOMB_AMOUNT_UPGRADE:
+                    pygame.draw.circle(screen, 'red', (self.LEFT + (j * self.CELL_SIZE) + self.CELL_SIZE // 2,
+                                                       self.TOP + (i * self.CELL_SIZE) + self.CELL_SIZE // 2),
                                        self.CELL_SIZE // 2 - 2)
                     pygame.draw.rect(screen, "white", (
                         self.LEFT + (j * self.CELL_SIZE), self.TOP + (i * self.CELL_SIZE), self.CELL_SIZE,
@@ -143,14 +172,16 @@ class Board:
                                      width=1)
 
     def upgrade_checker(self, y_move, x_move):
-        if self.board[self.y + y_move][self.x + x_move] == 4:
+        if self.board[self.y + y_move][self.x + x_move] == self.RANGE_UPGRADE:
             self.bomb_range += 1
             self.bomb_ranges = self.bomb_range
-        elif self.board[self.y + y_move][self.x + x_move] == 5:
+        elif self.board[self.y + y_move][self.x + x_move] == self.TIMER_UPGRADE:
             self.bomb_timer_length -= 0.5
+        elif self.board[self.y + y_move][self.x + x_move] == self.BOMB_AMOUNT_UPGRADE:
+            self.bomb_amount += 3
         else:
             return
-        self.score += 50
+        self.score += 200
         cursor = self.CONNECTION.cursor()
         cursor.execute("UPDATE user_data SET user_score = user_score + 50")
         cursor.close()
@@ -161,7 +192,7 @@ class Board:
             self.upgrade_checker(1, 0)
             self.board[self.y][self.x] = 0
             self.y += 1
-            self.board[self.y][self.x] = self.player
+            self.board[self.y][self.x] = self.PLAYER
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
@@ -171,7 +202,7 @@ class Board:
             self.upgrade_checker(-1, 0)
             self.board[self.y][self.x] = 0
             self.y -= 1
-            self.board[self.y][self.x] = self.player
+            self.board[self.y][self.x] = self.PLAYER
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
@@ -181,7 +212,7 @@ class Board:
             self.upgrade_checker(0, -1)
             self.board[self.y][self.x] = 0
             self.x -= 1
-            self.board[self.y][self.x] = self.player
+            self.board[self.y][self.x] = self.PLAYER
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
@@ -191,7 +222,7 @@ class Board:
             self.upgrade_checker(0, 1)
             self.board[self.y][self.x] = 0
             self.x += 1
-            self.board[self.y][self.x] = self.player
+            self.board[self.y][self.x] = self.PLAYER
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
@@ -223,28 +254,31 @@ class Board:
         else:
             y = 0
             x = step
-        if self.board[self.bomb_y + y][self.bomb_x + x] == self.player or self.board[self.bomb_y][
-            self.bomb_x] == self.player:
+        if self.board[self.bomb_y + y][self.bomb_x + x] == self.PLAYER or self.board[self.bomb_y][
+            self.bomb_x] == self.PLAYER:
             exit()
-        if self.board[self.bomb_y + y][self.bomb_x + x] == 2:
-            self.score += 200
+        if self.board[self.bomb_y + y][self.bomb_x + x] == self.GOLDEN_BARREL:
+            self.score += 1000
             cursor = self.CONNECTION.cursor()
             cursor.execute("UPDATE user_data SET user_score = user_score + 200")
             cursor.execute("UPDATE user_data SET user_wins = user_wins + 1")
             cursor.execute("UPDATE user_data SET previously_played_board_id = ?", (self.board_id,))
+            cursor.execute("UPDATE saved_on_quitting_info SET win = 1")
             self.CONNECTION.commit()
             cursor.close()
         upgrade_placed = False
-        if self.board[self.bomb_y + y][self.bomb_x + x] == 1 and self.upgrades_left:
+        if self.board[self.bomb_y + y][self.bomb_x + x] == self.WALL and self.upgrades_left:
             rand_gen_numb_1 = randint(1, self.wall_amount)
             self.wall_amount -= 1
             if rand_gen_numb_1 in [1, 2, 3]:
                 rand_gen_numb_2 = randint(1, len(self.upgrades_left))
                 upgrade = self.upgrades_left[rand_gen_numb_2 - 1]
                 if upgrade == 'range':
-                    upgrade_number = 4
-                if upgrade == 'timer':
-                    upgrade_number = 5
+                    upgrade_number = self.RANGE_UPGRADE
+                elif upgrade == 'timer':
+                    upgrade_number = self.TIMER_UPGRADE
+                else:
+                    upgrade_number = self.BOMB_AMOUNT_UPGRADE
                 self.upgrades_left.pop(rand_gen_numb_2 - 1)
                 self.board[self.bomb_y + y][self.bomb_x + x] = upgrade_number
                 upgrade_placed = True
@@ -286,24 +320,25 @@ class Board:
             self.bomb_ranges = self.bomb_range
         "self.explosion_sound()"
         self.explode()
-        self.bomb_amount -= 1
 
     def save_data_on_quit(self):
         txt_board = ""
         for i in range(self.HEIGHT):
             for j in range(self.WIDTH):
-                if self.board[i][j] == 0:
-                    tile = "."
-                elif self.board[i][j] == 1:
+                if self.board[i][j] == self.GOLDEN_BARREL:
+                    tile = "$"
+                elif self.board[i][j] == self.WALL:
                     tile = "#"
-                elif self.board[i][j] == 9:
+                elif self.board[i][j] == self.PLAYER:
                     tile = "P"
                 else:
-                    tile = "$"
+                    tile = "."
                 txt_board += tile
             txt_board += "\n"
         txt_upgrades = " ".join(self.upgrades_left)
         cursor = self.CONNECTION.cursor()
+        end_check = abs(list(cursor.execute("SELECT win FROM saved_on_quitting_info"))[0][0] - 1)
+        print(end_check)
         cursor.execute("UPDATE saved_on_quitting_info SET "
                        "bombs_left = ?,"
                        "saved_board = ?,"
@@ -312,9 +347,9 @@ class Board:
                        "bomb_timer = ?,"
                        "current_board_score = ?,"
                        "saved_board_id = ?,"
-                       "saved = 1",
+                       "saved = ?",
                        (self.bomb_amount, txt_board, txt_upgrades,
-                        self.bomb_range, self.bomb_timer_length, self.score, self.board_id))
+                        self.bomb_range, self.bomb_timer_length, self.score, self.board_id, end_check))
         self.CONNECTION.commit()
         cursor.close()
 
@@ -389,6 +424,7 @@ if __name__ == '__main__':
                 board.explode_check()
                 board.bomb_placed = False
                 board.can_place_bombs = True
+                board.bomb_amount -= 1
         else:
             board.bomb_timer_fps += 1
             if board.bomb_timer_fps == FPS * (board.bomb_timer_length + 0.25):
