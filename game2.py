@@ -25,10 +25,10 @@ PLAYER_MOVE = [load_image("player1.png"),
                load_image("player2.png"),
                load_image("player3.png"),
                load_image("player4.png")]
-PLAYER_MOVE_COUNTER = 1
-SIZE = 600, 400
+player_move_counter = 1
+WIDTH, HEIGHT = 600, 400
 BOARD_WIDTH, BOARD_HEIGHT = 10, 7
-FPS = 60
+
 
 # noinspection PyUnboundLocalVariable
 class Board:
@@ -55,28 +55,32 @@ class Board:
                 elif self.board_splitted[i][j] == "#":
                     tile = 1
                     self.wall_amount += 1
+                elif self.board_splitted[i][j] == "P":
+                    tile = 9
+                    self.x = j
+                    self.y = i
                 else:
                     tile = 2
                 self.board[i][j] = tile
         self.bomb_board = [[0] * self.WIDTH for _ in range(self.HEIGHT)]
         self.explode_board = [[0] * self.WIDTH for _ in range(self.HEIGHT)]
-        self.LEFT = 10
-        self.TOP = 10
+        self.LEFT = 30
+        self.TOP = 30
         self.CELL_SIZE = 50
-        self.x, self.y = 0, 0
         self.score = 0
         self.bomb_timer_fps, self.bomb_x, self.bomb_y = 0, 0, 0
-        self.player = self.board[self.x][self.y] = 9
         self.bomb_placed = False
         self.bomb_range = 1
         self.bomb_ranges = self.bomb_range
         self.bomb_timer_length = 2
+        self.bomb_amount = \
+            list(self.CONNECTION.cursor().execute("SELECT bomb_amount FROM bomber_fields WHERE field_id = ?",
+                                                  (self.board_id,)))[0][0]
         self.can_place_bombs = True
         self.side_ranges = []
         self.explosion_frame_counter, self.explosions, self.explosion_counter = 0, 0, 0
         self.ALL_UPGRADES = ['range', 'timer']
         self.upgrades_left = self.ALL_UPGRADES.copy()
-
 
     def explosion_render(self):
         self.explosion_counter += 1
@@ -152,7 +156,6 @@ class Board:
         cursor.close()
 
     def move_down(self):
-        global PLAYER_MOVE_COUNTER
         if self.y + 1 < self.HEIGHT and self.board[self.y + 1][self.x] not in [1, 2] and self.bomb_board[self.y + 1][
             self.x] != 1:
             self.upgrade_checker(1, 0)
@@ -161,10 +164,8 @@ class Board:
             self.board[self.y][self.x] = self.player
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
-        PLAYER_MOVE_COUNTER = 1
 
     def move_up(self):
-        global PLAYER_MOVE_COUNTER
         if self.y - 1 >= 0 and self.board[self.y - 1][self.x] not in [1, 2] and self.bomb_board[self.y - 1][
             self.x] != 1:
             self.upgrade_checker(-1, 0)
@@ -173,10 +174,8 @@ class Board:
             self.board[self.y][self.x] = self.player
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
-        PLAYER_MOVE_COUNTER = 3
 
     def move_left(self):
-        global PLAYER_MOVE_COUNTER
         if self.x - 1 >= 0 and self.board[self.y][self.x - 1] not in [1, 2] and self.bomb_board[self.y][
             self.x - 1] != 1:
             self.upgrade_checker(0, -1)
@@ -185,10 +184,8 @@ class Board:
             self.board[self.y][self.x] = self.player
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
-        PLAYER_MOVE_COUNTER = 2
 
     def move_right(self):
-        global PLAYER_MOVE_COUNTER
         if self.x + 1 < self.WIDTH and self.board[self.y][self.x + 1] not in [1, 2] and self.bomb_board[self.y][
             self.x + 1] != 1:
             self.upgrade_checker(0, 1)
@@ -197,7 +194,6 @@ class Board:
             self.board[self.y][self.x] = self.player
         else:
             self.board[self.y][self.x] = self.board[self.y][self.x]
-        PLAYER_MOVE_COUNTER = 4
 
     def bomb_placement(self):
         if self.can_place_bombs:
@@ -288,7 +284,39 @@ class Board:
             self.explode_check()
         else:
             self.bomb_ranges = self.bomb_range
+        "self.explosion_sound()"
         self.explode()
+        self.bomb_amount -= 1
+
+    def save_data_on_quit(self):
+        txt_board = ""
+        for i in range(self.HEIGHT):
+            for j in range(self.WIDTH):
+                if self.board[i][j] == 0:
+                    tile = "."
+                elif self.board[i][j] == 1:
+                    tile = "#"
+                elif self.board[i][j] == 9:
+                    tile = "P"
+                else:
+                    tile = "$"
+                txt_board += tile
+            txt_board += "\n"
+        txt_upgrades = " ".join(self.upgrades_left)
+        cursor = self.CONNECTION.cursor()
+        cursor.execute("UPDATE saved_on_quitting_info SET "
+                       "bombs_left = ?,"
+                       "saved_board = ?,"
+                       "upgrades_left = ?,"
+                       "bomb_range = ?,"
+                       "bomb_timer = ?,"
+                       "current_board_score = ?,"
+                       "saved_board_id = ?,"
+                       "saved = 1",
+                       (self.bomb_amount, txt_board, txt_upgrades,
+                        self.bomb_range, self.bomb_timer_length, self.score, self.board_id))
+        self.CONNECTION.commit()
+        cursor.close()
 
 
 class Bomb(pygame.sprite.Sprite):
@@ -309,18 +337,20 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
     def update(self):
-        self.image = PLAYER_MOVE[PLAYER_MOVE_COUNTER - 1]
+        self.image = PLAYER_MOVE[player_move_counter - 1]
         self.rect.x = board.x * board.CELL_SIZE + board.LEFT + 5
         self.rect.y = board.y * board.CELL_SIZE + board.TOP
 
 
 if __name__ == '__main__':
     pygame.display.set_caption('bomber')
-    main_screen = pygame.display.set_mode(SIZE)
+    size = WIDTH, HEIGHT
+    main_screen = pygame.display.set_mode(size)
     main_screen.fill('black')
     board = Board(BOARD_WIDTH, BOARD_HEIGHT)
     running = True
     clock = pygame.time.Clock()
+    FPS = 60
     bomb_group = pygame.sprite.Group()
     bomb = Bomb()
     bomb_group.add(bomb)
@@ -330,18 +360,23 @@ if __name__ == '__main__':
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                board.save_data_on_quit()
                 running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     board.bomb_placement()
                 if event.key == pygame.K_DOWN:
                     board.move_down()
+                    player_move_counter = 1
                 if event.key == pygame.K_UP:
                     board.move_up()
+                    player_move_counter = 3
                 if event.key == pygame.K_LEFT:
                     board.move_left()
+                    player_move_counter = 2
                 if event.key == pygame.K_RIGHT:
                     board.move_right()
+                    player_move_counter = 4
         main_screen.fill('black')
         player_group.update()
         player_group.draw(main_screen)
