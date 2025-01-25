@@ -87,8 +87,7 @@ class StartMenu:
         elif x < self.R * 1.8 and y < self.R * 1.8:
             self.language = abs(self.language - 1)
         elif 695 > x > 545 and 325 < y < 375:
-            game_running = True
-            menu_running = False
+            running = False
 
     def update(self):
         self.flag = FLAGS[self.language]
