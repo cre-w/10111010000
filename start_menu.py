@@ -82,6 +82,7 @@ class StartMenu:
                          width=2)
 
     def click_check(self, x, y):
+        global running
         if x > WIDTH - self.R * 1.8 and y < self.R * 1.8:
             exit()
         elif x < self.R * 1.8 and y < self.R * 1.8:
