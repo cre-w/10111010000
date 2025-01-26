@@ -324,6 +324,7 @@ class DeathScreen:
               HEIGHT * 0.4727 + 15 < y < HEIGHT * 0.4727 + 15 + HEIGHT // 10 - 4):
             dead = False
             menu_running = True
+            board.CONNECTION.close()
             menu.restart()
         elif (WIDTH // 12 * 3.5 < x < WIDTH // 12 * 3.5 + WIDTH // 9 * 4 and
               HEIGHT * 0.5727 + 15 < y < HEIGHT * 0.5727 + 15 + HEIGHT // 10 - 4):
@@ -470,7 +471,7 @@ class Board:
         screen.blit(wins, (WIDTH - 9.5 * len(wins_string), self.TOP // 5 + HEIGHT // 8))
         screen.blit(title_description, (WIDTH - title_coef * len(title_string), self.TOP // 5 + HEIGHT // 6))
         actually_the_title = special_font.render(actual_title, True, 'green')
-        screen.blit(actually_the_title, (WIDTH - 13.4 * len(actual_title), self.TOP // 5 + HEIGHT // 5))
+        screen.blit(actually_the_title, (WIDTH - 16.34 * len(actual_title), self.TOP // 5 + HEIGHT // 5))
         for i in range(self.HEIGHT):
             for j in range(self.WIDTH):
                 if self.explode_board[i][j] == 1:
@@ -602,7 +603,13 @@ class Board:
             self.board[self.y][self.x] = self.board[self.y][self.x]
 
     def bomb_placement(self):
+        global dead, game_running
         if self.can_place_bombs:
+            if self.bomb_amount == 0:
+                explosion_sound()
+                dead = True
+                game_running = False
+                return
             self.explosions = 0
             self.explosion_counter = 0
             self.explosion_frame_counter = 0
