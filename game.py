@@ -50,16 +50,14 @@ BOARD_WIDTH, BOARD_HEIGHT = 10, 7
 # Описание игры в главном меню
 DESCRIPTIONS_EN = ["In this game you need to blow up the golden block", "to proceed to the next stage."]
 INSTRUCTIONS_EN = ["To move use the arrow keys and", "spacebar to place down a bomb."]
-EXPLANATIONS_EN = ["Brown blocks are walls, gray blocks are invulnerable",
-                   "to explosions. The pocket watch is a timer upgrade,",
+EXPLANATIONS_EN = ["Brown blocks are walls. The pocket watch is a timer upgrade,",
                    "reducing the time the bomb needs to explode by 0.5 seconds.",
                    "The bomb (not the one you place) adds 3 more bombs.",
                    "And the plus sign adds range to your bomb",
                    "(exploding 2 blocks in each row, rather than 1)."]
 DESCRIPTIONS_RU = ["В этой игре вам нужно подорвать золотой блок", "чтобы пройти на следующий уровень."]
 INSTRUCTIONS_RU = ["Чтобы двигаться используйте стрелки и", "пробел, чтобы положить бомбу."]
-EXPLANATIONS_RU = ["Коричневые блоки - стены, серые блоки - невосприимчивы",
-                   "к взрывам. Карманные часы - улучшение времени,",
+EXPLANATIONS_RU = ["Коричневые блоки - стены. Часы - улучшение времени,",
                    "снижающее время взрыва бомбы на 0.5 секунд.",
                    "Бомба (не та, которую вы ставите) дает 3 доп. бомбы.",
                    "И плюсовой бонус увеличивает радиус взрыва бомбы",
@@ -491,7 +489,7 @@ class Board:
         screen.blit(wins, (WIDTH - 9.5 * len(wins_string), self.TOP // 5 + HEIGHT // 8))
         screen.blit(title_description, (WIDTH - title_coef * len(title_string), self.TOP // 5 + HEIGHT // 6))
         actually_the_title = special_font.render(actual_title, True, 'green')
-        screen.blit(actually_the_title, (WIDTH - title_coef * len(actual_title), self.TOP // 5 + HEIGHT // 5))
+        screen.blit(actually_the_title, (WIDTH - 1.6 * title_coef * len(actual_title), self.TOP // 5 + HEIGHT // 5))
         # Рендер самого игрового поля
         for i in range(self.HEIGHT):
             for j in range(self.WIDTH):
