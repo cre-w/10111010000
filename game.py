@@ -5,6 +5,7 @@ import os
 import sys
 
 pygame.init()
+pygame.mixer.init()
 
 
 def load_image(name):
@@ -13,6 +14,18 @@ def load_image(name):
         sys.exit()
     image = pygame.image.load(fullname)
     return image
+
+
+
+BG_MUSIC = pygame.mixer.music
+BG_MUSIC.load("sanctuary.mp3")
+BG_MUSIC.set_volume(0.34)
+BG_MUSIC.play(loops=True)
+EXPLOSION_SFX = pygame.mixer.Sound("explosion.mp3")
+
+
+def explosion_sound():
+    pygame.mixer.Channel(0).play(EXPLOSION_SFX)
 
 
 EXPLOSION_FRAMES = [load_image("explosion_frame_1.png"),
@@ -29,7 +42,7 @@ TIMER_UPGRADE_IMAGE = load_image("pocket_watch.png")
 RANGE_UPGRADE_IMAGE = load_image("blast.png")
 BOMB_AMOUNT_UPGRADE_IMAGE = load_image("bomb_1.png")
 WIDTH, HEIGHT = 727, 400
-BOARD_WIDTH, BOARD_HEIGHT = 10, 7  # 13
+BOARD_WIDTH, BOARD_HEIGHT = 10, 7
 DESCRIPTIONS_EN = ["In this game you need to blow up the golden block", "to proceed to the next stage."]
 INSTRUCTIONS_EN = ["To move use the arrow keys and", "spacebar to place down a bomb."]
 EXPLANATIONS_EN = ["Brown blocks are walls, gray blocks are invulnerable",
@@ -304,7 +317,7 @@ class DeathScreen:
                 HEIGHT * 0.3727 + 15 < y < HEIGHT * 0.3727 + 15 + HEIGHT // 10 - 4):
             dead = False
             game_running = True
-            board.continue_playing()
+            board.restart()
         elif (WIDTH // 12 * 3.5 < x < WIDTH // 12 * 3.5 + WIDTH // 9 * 4 and
               HEIGHT * 0.4727 + 15 < y < HEIGHT * 0.4727 + 15 + HEIGHT // 10 - 4):
             dead = False
@@ -393,6 +406,14 @@ class Board:
         cursor.close()
 
     def continue_playing(self):
+        self.CONNECTION.close()
+        self.__init__(BOARD_WIDTH, BOARD_HEIGHT)
+
+    def restart(self):
+        cursor = self.CONNECTION.cursor()
+        cursor.execute("UPDATE saved_on_quitting_info SET saved = 0")
+        self.CONNECTION.commit()
+        cursor.close()
         self.CONNECTION.close()
         self.__init__(BOARD_WIDTH, BOARD_HEIGHT)
 
@@ -570,14 +591,13 @@ class Board:
         if self.board[self.bomb_y + y][self.bomb_x + x] == self.GOLDEN_BARREL:
             self.score += 1000
             cursor = self.CONNECTION.cursor()
-            cursor.execute("UPDATE user_data SET user_score = user_score + 200")
+            cursor.execute("UPDATE user_data SET user_score = user_score + ?", (self.score,))
             cursor.execute("UPDATE user_data SET user_wins = user_wins + 1")
             cursor.execute("UPDATE user_data SET previously_played_board_id = ?", (self.board_id,))
             cursor.execute("UPDATE saved_on_quitting_info SET win = 1")
             self.CONNECTION.commit()
             cursor.close()
             won = True
-            game_running = False
             self.save_data_on_quit()
         upgrade_placed = False
         if self.board[self.bomb_y + y][self.bomb_x + x] == self.WALL and self.upgrades_left:
@@ -631,7 +651,7 @@ class Board:
             self.explode_check()
         else:
             self.bomb_ranges = self.bomb_range
-        # self.explosion_sound()
+        explosion_sound()
         self.explode()
 
     def click_check(self, x, y):
@@ -788,6 +808,8 @@ if __name__ == '__main__':
                 board.bomb_timer_fps += 1
                 if board.bomb_timer_fps == FPS * (board.bomb_timer_length + 0.25):
                     board.explode_clear()
+                    if won:
+                        game_running = False
             pygame.display.flip()
         while dead:
             for event in pygame.event.get():
