@@ -643,6 +643,7 @@ class Board:
             game_running = False
         if self.board[self.bomb_y + y][self.bomb_x + x] == self.GOLDEN_BARREL:
             self.score += 1000
+            self.score += self.bomb_amount * 20
             cursor = self.CONNECTION.cursor()
             cursor.execute("UPDATE user_data SET user_score = user_score + ?", (self.score,))
             cursor.execute("UPDATE user_data SET user_wins = user_wins + 1")
@@ -659,7 +660,7 @@ class Board:
         if self.board[self.bomb_y + y][self.bomb_x + x] == self.WALL and self.upgrades_left:
             rand_gen_numb_1 = randint(1, self.wall_amount)
             self.wall_amount -= 1
-            if rand_gen_numb_1 in [1, 2, 3]:
+            if rand_gen_numb_1 in [1, 2, 3, 4]:
                 rand_gen_numb_2 = randint(1, len(self.upgrades_left))
                 upgrade = self.upgrades_left[rand_gen_numb_2 - 1]
                 if upgrade == 'range':
