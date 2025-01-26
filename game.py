@@ -16,7 +16,6 @@ def load_image(name):
     return image
 
 
-
 BG_MUSIC = pygame.mixer.music
 BG_MUSIC.load("sanctuary.mp3")
 BG_MUSIC.set_volume(0.34)
@@ -358,7 +357,8 @@ class Board:
         self.side_ranges = []
         self.bomb_board = [[0] * self.WIDTH for _ in range(self.HEIGHT)]
         self.explode_board = [[0] * self.WIDTH for _ in range(self.HEIGHT)]
-        self.bomb_timer_fps, self.bomb_x, self.bomb_y = 0, 0, 0
+        self.bomb_timer_fps, self.bomb_x, self.bomb_y, self.upgrade_text_timer = 0, 0, 0, 0
+        self.picked_up_upgrade = ""
         self.bomb_placed = False
         if saved_game_check == 1:
             self.board_txt = list(cursor.execute("SELECT saved_board FROM saved_on_quitting_info"))[0][0]
@@ -437,6 +437,8 @@ class Board:
         bomb_count = FONT.render(bomb_counter, True, 'green')
         screen.blit(score, (WIDTH - 11 * len(score_string), self.TOP // 5))
         screen.blit(bomb_count, (WIDTH - 11 * len(bomb_counter) - 11 * len(score_string), self.TOP // 5))
+        upgrade = FONT.render(self.picked_up_upgrade, True, 'green')
+        screen.blit(upgrade, (WIDTH // 5, self.TOP // 5))
         pygame.draw.circle(screen, 'white', (self.R, self.R), self.R, width=1)
         pygame.draw.line(screen, 'white', (self.R // 3 * 2, self.R // 2), (self.R // 3 * 2, self.R * 1.5), width=4)
         pygame.draw.line(screen, 'white', (self.R // 7 * 9, self.R // 2), (self.R // 7 * 9, self.R * 1.5), width=4)
@@ -501,15 +503,30 @@ class Board:
                                      width=1)
 
     def upgrade_checker(self, y_move, x_move):
+        global upgrade_text_check
         if self.board[self.y + y_move][self.x + x_move] == self.RANGE_UPGRADE:
+            if LANGUAGES[self.language] == 'EN':
+                self.picked_up_upgrade = "Range upgraded!"
+            else:
+                self.picked_up_upgrade = "Радиус увеличен!"
             self.bomb_range += 1
             self.bomb_ranges = self.bomb_range
         elif self.board[self.y + y_move][self.x + x_move] == self.TIMER_UPGRADE:
+            if LANGUAGES[self.language] == 'EN':
+                self.picked_up_upgrade = "Timer upgraded!"
+            else:
+                self.picked_up_upgrade = "Время взрыва уменьшено!"
             self.bomb_timer_length -= 0.5
         elif self.board[self.y + y_move][self.x + x_move] == self.BOMB_AMOUNT_UPGRADE:
+            if LANGUAGES[self.language] == 'EN':
+                self.picked_up_upgrade = "More bombs are available!"
+            else:
+                self.picked_up_upgrade = "Доступно больше бомб!"
             self.bomb_amount += 3
         else:
             return
+        upgrade_text_check = True
+        self.upgrade_text_timer = 0
         self.score += 200
         cursor = self.CONNECTION.cursor()
         cursor.execute("UPDATE user_data SET user_score = user_score + 50")
@@ -728,6 +745,7 @@ if __name__ == '__main__':
     dead = False
     paused = False
     won = False
+    upgrade_text_check = False
     menu = StartMenu()
     pause_menu = PauseMenu()
     death_screen = DeathScreen()
@@ -810,6 +828,11 @@ if __name__ == '__main__':
                     board.explode_clear()
                     if won:
                         game_running = False
+            if upgrade_text_check:
+                board.upgrade_text_timer += 1
+                if board.upgrade_text_timer >= 90:
+                    board.picked_up_upgrade = ""
+                    upgrade_text_check = False
             pygame.display.flip()
         while dead:
             for event in pygame.event.get():
