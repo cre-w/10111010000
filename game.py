@@ -64,6 +64,9 @@ FLAGS = [load_image("ru.png"),
          load_image("en.png")]
 player_move_counter = 1
 FONT = pygame.font.Font(None, 30)
+PLAYER_TITLES_WINS_LIST = [0, 1, 5, 10, 25, 100]
+PLAYER_TITLES_EN = {0: "Citizen", 1: "Extremist", 5: "Average Discord user", 10: "", 25: "Professional terrorist", 100: "Osama bin Laden"}
+PLAYER_TITLES_RU = {0: "Гражданин", 1: "Экстремист", 5: "Пользователь Discord'a", 10: "", 25: "Профессиональный террорист", 100: "Усама бен Ладен"}
 
 
 class StartMenu:
@@ -352,6 +355,7 @@ class Board:
         self.language = language
         cursor = self.CONNECTION.cursor()
         saved_game_check = list(cursor.execute("SELECT saved FROM saved_on_quitting_info"))[0][0]
+        self.title = list(cursor.execute("SELECT user_title FROM user_data"))[0][0]
         self.explosion_frame_counter, self.explosions, self.explosion_counter = 0, 0, 0
         self.can_place_bombs = True
         self.side_ranges = []
@@ -427,12 +431,29 @@ class Board:
         return EXPLOSION_FRAMES[self.explosion_frame_counter]
 
     def render(self, screen):
+        special_font = pygame.font.Font(None, 23)
+        cursor = self.CONNECTION.cursor()
+        alltime_score_number = list(cursor.execute("SELECT user_score FROM user_data"))[0][0]
+        number_of_wins = list(cursor.execute("SELECT user_wins FROM user_data"))[0][0]
+        cursor.close()
         if LANGUAGES[self.language] == 'EN':
             score_string = "Score: " + str(self.score)
             bomb_counter = "Bombs left: " + str(self.bomb_amount)
+            alltime_score_string = "Alltime score: " + str(alltime_score_number)
+            wins_string = "Amount of wins: " + str(number_of_wins)
+            title_string = "Current rank: "
+            actual_title = PLAYER_TITLES_EN[self.title]
+            title_coef = 10
+            alltime_score_coef = 170
         else:
             score_string = "Очки: " + str(self.score)
             bomb_counter = "Бомб осталось: " + str(self.bomb_amount)
+            alltime_score_string = "Очки за все время: " + str(alltime_score_number)
+            wins_string = "Количество побед: " + str(number_of_wins)
+            title_string = "Ваш ранг: "
+            actual_title = PLAYER_TITLES_RU[self.title]
+            title_coef = 14
+            alltime_score_coef = 187
         score = FONT.render(score_string, True, 'green')
         bomb_count = FONT.render(bomb_counter, True, 'green')
         screen.blit(score, (WIDTH - 11 * len(score_string), self.TOP // 5))
@@ -442,6 +463,14 @@ class Board:
         pygame.draw.circle(screen, 'white', (self.R, self.R), self.R, width=1)
         pygame.draw.line(screen, 'white', (self.R // 3 * 2, self.R // 2), (self.R // 3 * 2, self.R * 1.5), width=4)
         pygame.draw.line(screen, 'white', (self.R // 7 * 9, self.R // 2), (self.R // 7 * 9, self.R * 1.5), width=4)
+        title_description = special_font.render(title_string, True, 'green')
+        wins = special_font.render(wins_string, True, 'green')
+        alltime_score = special_font.render(alltime_score_string, True, 'green')
+        screen.blit(alltime_score, (WIDTH - alltime_score_coef, self.TOP // 5 + HEIGHT // 11))
+        screen.blit(wins, (WIDTH - 9.5 * len(wins_string), self.TOP // 5 + HEIGHT // 8))
+        screen.blit(title_description, (WIDTH - title_coef * len(title_string), self.TOP // 5 + HEIGHT // 6))
+        actually_the_title = special_font.render(actual_title, True, 'green')
+        screen.blit(actually_the_title, (WIDTH - 13.4 * len(actual_title), self.TOP // 5 + HEIGHT // 5))
         for i in range(self.HEIGHT):
             for j in range(self.WIDTH):
                 if self.explode_board[i][j] == 1:
@@ -529,7 +558,7 @@ class Board:
         self.upgrade_text_timer = 0
         self.score += 200
         cursor = self.CONNECTION.cursor()
-        cursor.execute("UPDATE user_data SET user_score = user_score + 50")
+        cursor.execute("UPDATE user_data SET user_score = user_score + 200")
         cursor.close()
 
     def move_down(self):
@@ -612,6 +641,9 @@ class Board:
             cursor.execute("UPDATE user_data SET user_wins = user_wins + 1")
             cursor.execute("UPDATE user_data SET previously_played_board_id = ?", (self.board_id,))
             cursor.execute("UPDATE saved_on_quitting_info SET win = 1")
+            wins = list(cursor.execute("SELECT user_wins FROM user_data"))[0][0]
+            if wins in PLAYER_TITLES_WINS_LIST:
+                cursor.execute("UPDATE user_data SET user_title = ?", (wins,))
             self.CONNECTION.commit()
             cursor.close()
             won = True
