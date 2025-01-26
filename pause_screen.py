@@ -13,20 +13,21 @@ class PauseMenu:
         self.language = language
 
     def render(self, screen):
+        pygame.draw.rect(screen, 'black', (WIDTH // 4, HEIGHT // 4, WIDTH // 2, HEIGHT // 2))
         pygame.draw.rect(screen, 'white', (WIDTH // 4, HEIGHT // 4, WIDTH // 2, HEIGHT // 2), width=3)
         if LANGUAGES[self.language] == 'EN':
             pause_text = "Paused"
-            exit_text = "Exit"
+            quit_text = "Quit to menu"
             restart_text = "Restart"
             resume_text = "Resume"
-            exit_coef = 5
+            quit_coef = -1.342
             resume_coef = 0.5
         else:
             pause_text = "Пауза"
-            exit_text = "Выйти"
+            quit_text = "Выйти в меню"
             restart_text = "Заново"
             resume_text = "Продолжить"
-            exit_coef = 2
+            quit_coef = -2.34
             resume_coef = -2
         pause = FONT.render(pause_text, True, 'white')
         screen.blit(pause, (WIDTH // 11 * 5, WIDTH // 6 + 5))
@@ -41,9 +42,9 @@ class PauseMenu:
         screen.blit(restart, (WIDTH // 12 * 3.5 + WIDTH // 8 + 25 + len(restart_text), HEIGHT * 0.4727 + 22))
         pygame.draw.rect(screen, 'white',
                          (WIDTH // 12 * 3.4, HEIGHT * 0.5727 + 15, WIDTH // 9 * 4, HEIGHT // 10 - 4), width=2)
-        exit_surface = FONT.render(exit_text, True, 'white')
-        screen.blit(exit_surface,
-                    (WIDTH // 12 * 3.5 + WIDTH // 8 + 25 + exit_coef * len(exit_text), HEIGHT * 0.5727 + 22))
+        quit_surface = FONT.render(quit_text, True, 'white')
+        screen.blit(quit_surface,
+                    (WIDTH // 12 * 3.5 + WIDTH // 8 + 25 + quit_coef * len(quit_text), HEIGHT * 0.5727 + 22))
 
     def click_check(self, x, y):
         global running
