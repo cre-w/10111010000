@@ -13,6 +13,7 @@ class PauseMenu:
         self.language = language
 
     def render(self, screen):
+        pygame.draw.rect(screen, 'black', (WIDTH // 4, HEIGHT // 4, WIDTH // 2, HEIGHT // 2))
         pygame.draw.rect(screen, 'white', (WIDTH // 4, HEIGHT // 4, WIDTH // 2, HEIGHT // 2), width=3)
         if LANGUAGES[self.language] == 'EN':
             pause_text = "Paused"
@@ -23,10 +24,10 @@ class PauseMenu:
             resume_coef = 0.5
         else:
             pause_text = "Пауза"
-            exit_text = "Выйти"
+            exit_text = "Выйти из игры"
             restart_text = "Заново"
             resume_text = "Продолжить"
-            exit_coef = 2
+            exit_coef = -2.34
             resume_coef = -2
         pause = FONT.render(pause_text, True, 'white')
         screen.blit(pause, (WIDTH // 11 * 5, WIDTH // 6 + 5))
