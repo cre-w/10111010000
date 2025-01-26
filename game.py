@@ -432,7 +432,7 @@ class Board:
         return EXPLOSION_FRAMES[self.explosion_frame_counter]
 
     def render(self, screen):
-        special_font = pygame.font.Font(None, 23)
+        special_font = pygame.font.Font(None, 18)
         cursor = self.CONNECTION.cursor()
         alltime_score_number = list(cursor.execute("SELECT user_score FROM user_data"))[0][0]
         number_of_wins = list(cursor.execute("SELECT user_wins FROM user_data"))[0][0]
@@ -471,7 +471,7 @@ class Board:
         screen.blit(wins, (WIDTH - 9.5 * len(wins_string), self.TOP // 5 + HEIGHT // 8))
         screen.blit(title_description, (WIDTH - title_coef * len(title_string), self.TOP // 5 + HEIGHT // 6))
         actually_the_title = special_font.render(actual_title, True, 'green')
-        screen.blit(actually_the_title, (WIDTH - 16.34 * len(actual_title), self.TOP // 5 + HEIGHT // 5))
+        screen.blit(actually_the_title, (WIDTH - title_coef * len(actual_title), self.TOP // 5 + HEIGHT // 5))
         for i in range(self.HEIGHT):
             for j in range(self.WIDTH):
                 if self.explode_board[i][j] == 1:
@@ -820,6 +820,7 @@ if __name__ == '__main__':
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     event_x, event_y = event.pos
                     pause_menu.click_check(event_x, event_y)
+            pause_menu.language = language
             clock.tick(FPS)
             pause_menu.render(main_screen)
             pygame.display.flip()
@@ -882,6 +883,7 @@ if __name__ == '__main__':
                     event_x, event_y = event.pos
                     death_screen.click_check(event_x, event_y)
             clock.tick(FPS)
+            death_screen.language = language
             death_screen.render(main_screen)
             pygame.display.flip()
         while won:
@@ -892,6 +894,7 @@ if __name__ == '__main__':
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     event_x, event_y = event.pos
                     win_screen.click_check(event_x, event_y)
+            win_screen.language = language
             clock.tick(FPS)
             win_screen.render(main_screen)
             pygame.display.flip()
