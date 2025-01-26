@@ -65,6 +65,9 @@ class StartMenu:
         language = self.language
         self.flag = FLAGS[self.language]
 
+    def restart(self):
+        self.__init__()
+
     def render(self, screen):
         name_font = pygame.font.Font(None, 45)
         if LANGUAGES[self.language] == 'EN':
@@ -141,17 +144,17 @@ class PauseMenu:
         pygame.draw.rect(screen, 'white', (WIDTH // 4, HEIGHT // 4, WIDTH // 2, HEIGHT // 2), width=3)
         if LANGUAGES[self.language] == 'EN':
             pause_text = "Paused"
-            exit_text = "Exit"
+            quit_text = "Quit to menu"
             restart_text = "Restart"
             resume_text = "Resume"
-            exit_coef = 5
+            quit_coef = -1.342
             resume_coef = 0.5
         else:
             pause_text = "Пауза"
-            exit_text = "Выйти"
+            quit_text = "Выйти в меню"
             restart_text = "Заново"
             resume_text = "Продолжить"
-            exit_coef = 2
+            quit_coef = -2.34
             resume_coef = -2
         pause = FONT.render(pause_text, True, 'white')
         screen.blit(pause, (WIDTH // 11 * 5, WIDTH // 6 + 5))
@@ -166,28 +169,157 @@ class PauseMenu:
         screen.blit(restart, (WIDTH // 12 * 3.5 + WIDTH // 8 + 25 + len(restart_text), HEIGHT * 0.4727 + 22))
         pygame.draw.rect(screen, 'white',
                          (WIDTH // 12 * 3.4, HEIGHT * 0.5727 + 15, WIDTH // 9 * 4, HEIGHT // 10 - 4), width=2)
-        exit_surface = FONT.render(exit_text, True, 'white')
-        screen.blit(exit_surface,
-                    (WIDTH // 12 * 3.5 + WIDTH // 8 + 25 + exit_coef * len(exit_text), HEIGHT * 0.5727 + 22))
+        quit_surface = FONT.render(quit_text, True, 'white')
+        screen.blit(quit_surface,
+                    (WIDTH // 12 * 3.5 + WIDTH // 8 + 25 + quit_coef * len(quit_text), HEIGHT * 0.5727 + 22))
 
     def click_check(self, x, y):
-        global running, paused, game_running
+        global menu_running, paused, game_running
         if (WIDTH // 12 * 3.5 < x < WIDTH // 12 * 3.5 + WIDTH // 9 * 4 and
                 HEIGHT * 0.3727 + 15 < y < HEIGHT * 0.3727 + 15 + HEIGHT // 10 - 4):
             paused = False
             game_running = True
         elif (WIDTH // 12 * 3.5 < x < WIDTH // 12 * 3.5 + WIDTH // 9 * 4 and
               HEIGHT * 0.4727 + 15 < y < HEIGHT * 0.4727 + 15 + HEIGHT // 10 - 4):
-            # restart
-            pass
+            paused = False
+            game_running = True
+            board.continue_playing()
         elif (WIDTH // 12 * 3.5 < x < WIDTH // 12 * 3.5 + WIDTH // 9 * 4 and
               HEIGHT * 0.5727 + 15 < y < HEIGHT * 0.5727 + 15 + HEIGHT // 10 - 4):
             paused = False
+            board.save_data_on_quit()
+            menu.restart()
+            menu_running = True
+
+
+class WinScreen:
+    def __init__(self):
+        global language
+        self.language = language
+
+    def render(self, screen):
+        pygame.draw.rect(screen, 'black', (WIDTH // 4, HEIGHT // 4, WIDTH // 2, HEIGHT // 2))
+        pygame.draw.rect(screen, 'white', (WIDTH // 4, HEIGHT // 4, WIDTH // 2, HEIGHT // 2), width=3)
+        if LANGUAGES[self.language] == 'EN':
+            win_text = "You won!"
+            continue_text = "Continue"
+            quit_text = "Quit to menu"
+            exit_text = "Exit"
+            win_coef = 0.69
+            continue_coef = 0
+            quit_coef = -1.5
+            exit_coef = 5
+        else:
+            win_text = "Вы победили!"
+            continue_text = "Продолжить"
+            quit_text = "Выйти в меню"
+            exit_text = "Выйти из игры"
+            win_coef = -1.634
+            continue_coef = -2
+            quit_coef = -2.5
+            exit_coef = -2.34727
+        death = FONT.render(win_text, True, 'white')
+        screen.blit(death, (WIDTH // 66 * 29 + win_coef * (len(win_text)), WIDTH // 6 + 5))
+        pygame.draw.rect(screen, 'white', (WIDTH // 12 * 3.4, HEIGHT * 0.3727 + 15, WIDTH // 9 * 4, HEIGHT // 10 - 4),
+                         width=2)
+        restart = FONT.render(continue_text, True, 'white')
+        screen.blit(restart,
+                    (WIDTH // 12 * 3.5 + WIDTH // 8 + 25 + continue_coef * len(continue_text), HEIGHT * 0.3727 + 22))
+        pygame.draw.rect(screen, 'white',
+                         (WIDTH // 12 * 3.4, HEIGHT * 0.4727 + 15, WIDTH // 9 * 4, HEIGHT // 10 - 4), width=2)
+        quit_surface = FONT.render(quit_text, True, 'white')
+        screen.blit(quit_surface,
+                    (WIDTH // 12 * 3.5 + WIDTH // 8 + 25 + quit_coef * len(quit_text), HEIGHT * 0.4727 + 22))
+        pygame.draw.rect(screen, 'white',
+                         (WIDTH // 12 * 3.4, HEIGHT * 0.5727 + 15, WIDTH // 9 * 4, HEIGHT // 10 - 4), width=2)
+        exit_surface = FONT.render(exit_text, True, 'white')
+        screen.blit(exit_surface,
+                    (WIDTH // 12 * 3.5 + WIDTH // 8 + 25 + exit_coef * len(exit_text), HEIGHT * 0.5727 + 22))
+
+    def click_check(self, x, y):
+        global running, won, menu_running, game_running
+        if (WIDTH // 12 * 3.5 < x < WIDTH // 12 * 3.5 + WIDTH // 9 * 4 and
+                HEIGHT * 0.3727 + 15 < y < HEIGHT * 0.3727 + 15 + HEIGHT // 10 - 4):
+            won = False
+            game_running = True
+            board.continue_playing()
+        elif (WIDTH // 12 * 3.5 < x < WIDTH // 12 * 3.5 + WIDTH // 9 * 4 and
+              HEIGHT * 0.4727 + 15 < y < HEIGHT * 0.4727 + 15 + HEIGHT // 10 - 4):
+            won = False
+            menu_running = True
+            menu.restart()
+        elif (WIDTH // 12 * 3.5 < x < WIDTH // 12 * 3.5 + WIDTH // 9 * 4 and
+              HEIGHT * 0.5727 + 15 < y < HEIGHT * 0.5727 + 15 + HEIGHT // 10 - 4):
+            won = False
+            running = False
+
+
+class DeathScreen:
+    def __init__(self):
+        global language
+        self.language = language
+
+    def render(self, screen):
+        pygame.draw.rect(screen, 'black', (WIDTH // 4, HEIGHT // 4, WIDTH // 2, HEIGHT // 2))
+        pygame.draw.rect(screen, 'white', (WIDTH // 4, HEIGHT // 4, WIDTH // 2, HEIGHT // 2), width=3)
+        if LANGUAGES[self.language] == 'EN':
+            death_text = "You died!"
+            restart_text = "Restart"
+            quit_text = "Quit to menu"
+            exit_text = "Exit"
+            death_coef = 0
+            restart_coef = 0.5
+            quit_coef = -1.5
+            exit_coef = 5
+        else:
+            death_text = "Вы погибли!"
+            restart_text = "Заново"
+            quit_text = "Выйти в меню"
+            exit_text = "Выйти из игры"
+            death_coef = -1.2
+            restart_coef = 0.5
+            quit_coef = -2.5
+            exit_coef = -2.34727
+        death = FONT.render(death_text, True, 'white')
+        screen.blit(death, (WIDTH // 66 * 29 + death_coef * (len(death_text)), WIDTH // 6 + 5))
+        pygame.draw.rect(screen, 'white', (WIDTH // 12 * 3.4, HEIGHT * 0.3727 + 15, WIDTH // 9 * 4, HEIGHT // 10 - 4),
+                         width=2)
+        restart = FONT.render(restart_text, True, 'white')
+        screen.blit(restart,
+                    (WIDTH // 12 * 3.5 + WIDTH // 8 + 25 + restart_coef * len(restart_text), HEIGHT * 0.3727 + 22))
+        pygame.draw.rect(screen, 'white',
+                         (WIDTH // 12 * 3.4, HEIGHT * 0.4727 + 15, WIDTH // 9 * 4, HEIGHT // 10 - 4), width=2)
+        quit_surface = FONT.render(quit_text, True, 'white')
+        screen.blit(quit_surface,
+                    (WIDTH // 12 * 3.5 + WIDTH // 8 + 25 + quit_coef * len(quit_text), HEIGHT * 0.4727 + 22))
+        pygame.draw.rect(screen, 'white',
+                         (WIDTH // 12 * 3.4, HEIGHT * 0.5727 + 15, WIDTH // 9 * 4, HEIGHT // 10 - 4), width=2)
+        exit_surface = FONT.render(exit_text, True, 'white')
+        screen.blit(exit_surface,
+                    (WIDTH // 12 * 3.5 + WIDTH // 8 + 25 + exit_coef * len(exit_text), HEIGHT * 0.5727 + 22))
+
+    def click_check(self, x, y):
+        global running, dead, menu_running, game_running
+        if (WIDTH // 12 * 3.5 < x < WIDTH // 12 * 3.5 + WIDTH // 9 * 4 and
+                HEIGHT * 0.3727 + 15 < y < HEIGHT * 0.3727 + 15 + HEIGHT // 10 - 4):
+            dead = False
+            game_running = True
+            board.continue_playing()
+        elif (WIDTH // 12 * 3.5 < x < WIDTH // 12 * 3.5 + WIDTH // 9 * 4 and
+              HEIGHT * 0.4727 + 15 < y < HEIGHT * 0.4727 + 15 + HEIGHT // 10 - 4):
+            dead = False
+            menu_running = True
+            menu.restart()
+        elif (WIDTH // 12 * 3.5 < x < WIDTH // 12 * 3.5 + WIDTH // 9 * 4 and
+              HEIGHT * 0.5727 + 15 < y < HEIGHT * 0.5727 + 15 + HEIGHT // 10 - 4):
+            dead = False
             running = False
 
 
 class Board:
     def __init__(self, board_width, board_height):
+        global player_move_counter
+        player_move_counter = 1
         self.CONNECTION = sqlite3.connect('pg_game_db')
         self.WIDTH = board_width
         self.HEIGHT = board_height
@@ -259,6 +391,10 @@ class Board:
                 self.board[i][j] = tile
         self.bomb_ranges = self.bomb_range
         cursor.close()
+
+    def continue_playing(self):
+        self.CONNECTION.close()
+        self.__init__(BOARD_WIDTH, BOARD_HEIGHT)
 
     def explosion_render(self):
         self.explosion_counter += 1
@@ -431,8 +567,6 @@ class Board:
             self.bomb_x] == self.PLAYER:
             dead = True
             game_running = False
-            # remove vvv
-            running = False
         if self.board[self.bomb_y + y][self.bomb_x + x] == self.GOLDEN_BARREL:
             self.score += 1000
             cursor = self.CONNECTION.cursor()
@@ -445,7 +579,6 @@ class Board:
             won = True
             game_running = False
             self.save_data_on_quit()
-            running = False
         upgrade_placed = False
         if self.board[self.bomb_y + y][self.bomb_x + x] == self.WALL and self.upgrades_left:
             rand_gen_numb_1 = randint(1, self.wall_amount)
@@ -577,6 +710,8 @@ if __name__ == '__main__':
     won = False
     menu = StartMenu()
     pause_menu = PauseMenu()
+    death_screen = DeathScreen()
+    win_screen = WinScreen()
     clock = pygame.time.Clock()
     FPS = 60
     bomb_group = pygame.sprite.Group()
@@ -653,4 +788,26 @@ if __name__ == '__main__':
                 board.bomb_timer_fps += 1
                 if board.bomb_timer_fps == FPS * (board.bomb_timer_length + 0.25):
                     board.explode_clear()
+            pygame.display.flip()
+        while dead:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    dead = False
+                    running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    event_x, event_y = event.pos
+                    death_screen.click_check(event_x, event_y)
+            clock.tick(FPS)
+            death_screen.render(main_screen)
+            pygame.display.flip()
+        while won:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    won = False
+                    running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    event_x, event_y = event.pos
+                    win_screen.click_check(event_x, event_y)
+            clock.tick(FPS)
+            win_screen.render(main_screen)
             pygame.display.flip()
