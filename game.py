@@ -675,7 +675,6 @@ class Board:
             self.CONNECTION.commit()
             cursor.close()
             won = True
-            self.save_data_on_quit()
         upgrade_placed = False
         # Проверка на улучшения, которые могут выпасть только со стен (ну и конечно если хоть какие-то остались)
         if self.board[self.bomb_y + y][self.bomb_x + x] == self.WALL and self.upgrades_left:
@@ -905,6 +904,7 @@ if __name__ == '__main__':
                     board.explode_clear()
                     if won:
                         game_running = False
+                        board.save_data_on_quit()
             if upgrade_text_check:
                 # Показываем текст о поднятии улучшения всего лишь на полторы секунды
                 board.upgrade_text_timer += 1
