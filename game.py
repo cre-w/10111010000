@@ -213,7 +213,7 @@ class PauseMenu:
               HEIGHT * 0.4727 + 15 < y < HEIGHT * 0.4727 + 15 + HEIGHT // 10 - 4):
             paused = False
             game_running = True
-            board.continue_playing()
+            board.restart()
         elif (WIDTH // 12 * 3.5 < x < WIDTH // 12 * 3.5 + WIDTH // 9 * 4 and
               HEIGHT * 0.5727 + 15 < y < HEIGHT * 0.5727 + 15 + HEIGHT // 10 - 4):
             paused = False
@@ -489,7 +489,7 @@ class Board:
         screen.blit(wins, (WIDTH - 9.5 * len(wins_string), self.TOP // 5 + HEIGHT // 8))
         screen.blit(title_description, (WIDTH - title_coef * len(title_string), self.TOP // 5 + HEIGHT // 6))
         actually_the_title = special_font.render(actual_title, True, 'green')
-        screen.blit(actually_the_title, (WIDTH - 1.6 * title_coef * len(actual_title), self.TOP // 5 + HEIGHT // 5))
+        screen.blit(actually_the_title, (WIDTH - 0.8 * title_coef * len(actual_title), self.TOP // 5 + HEIGHT // 5))
         # Рендер самого игрового поля
         for i in range(self.HEIGHT):
             for j in range(self.WIDTH):
